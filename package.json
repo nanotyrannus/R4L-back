@@ -2,23 +2,23 @@
   "name": "r4l_backend",
   "version": "0.0.1",
   "description": "Rest API for R4L",
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Backend of SIRI project (test change!!)",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
-    "type": "git",
-    "url": "git+https://github.com/lan-nguyen91/R4L-back.git"
   },
   "keywords": [
     "Radar",
     "for",
     "life"
   ],
-  "author": "Lan Nguyen",
+  "author": "Lan, Ryan",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/lan-nguyen91/R4L-back/issues"
   },
   "homepage": "https://github.com/lan-nguyen91/R4L-back#readme",
   "dependencies": {
