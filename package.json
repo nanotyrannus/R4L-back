@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/nanotyrannus/R4L-back/issues"
   },
-  "homepage": "https://github.com/nanotyrannus/R4L-back#readme"
+  "homepage": "https://github.com/nanotyrannus/R4L-back#readme",
+  "dependencies": {
+    "pg": "^4.4.3"
+  }
 }
