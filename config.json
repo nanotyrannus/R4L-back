@@ -1,0 +1,3 @@
+{
+  "postgres" : "postgres://lannguyen:1234@localhost:5432/TestDB"
+}
