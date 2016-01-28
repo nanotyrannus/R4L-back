@@ -1,3 +1,4 @@
 {
-  "postgres" : "postgres://lannguyen:1234@localhost:5432/TestDB"
+  "postgres" : "postgres://ryan:1234@localhost:5432/ryan",
+  "port" : "3000"
 }

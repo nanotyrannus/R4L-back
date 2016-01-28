@@ -4,7 +4,9 @@ let koa      = require('koa');
 let postgres = require('pg');
 let pg       = require('co-pg')(postgres);
 let config   = require('./config');
-let bodyParser = require('koa-bodyParser');
+let bodyParser = require('koa-bodyparser');
+let db = require("./shared/db.js")("hello from module in index.js");
+
 
 // koa app
 let app = koa();
@@ -14,13 +16,17 @@ app.use(bodyParser());
 //inject postgres client as middleware
 app.use(function *(next) {
   let ctx = this;
-  let client = new pg.Client(config.postgres);
+  ctx.body = "start: " + (new Date().valueOf()) + " "
+  // let client = new pg.Client(config.postgres);
+  // // connect database
+  // let pgClient = yield client.connectPromise();
+  // ctx.pgClient = pgClient;
+  let connectionResults = yield pg.connectPromise(config.postgres);
+  ctx.client = connectionResults[0];
+  ctx.done = connectionResults[1];
 
-  // connect database
-  let pgClient = yield client.connectPromise();
-  ctx.pgClient = pgClient;
   yield next;
-
+  ctx.body += "end: " + (new Date().valueOf()) + " "
 });
 
 let userRoutes = require('./routes/user');
