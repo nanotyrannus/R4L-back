@@ -1,4 +1,5 @@
 {
   "postgres" : "postgres://ryan:1234@localhost:5432/ryan",
-  "port" : "3000"
+  "port" : "3000",
+  "postgis" : "postgres://ryan:1234@localhost:5432/postgis"
 }

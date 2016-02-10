@@ -16,7 +16,11 @@ app.use(function *(next) {
   let ctx = this;
   let start = new Date().valueOf()
   ctx.body = "start: " + start + " "
-  yield next;
+  try {
+    yield next;
+  } catch (err) {
+    console.log("index: ", " ",err)
+  }
   ctx.body += " delay: " + (new Date().valueOf() - start) + " "
 });
 
