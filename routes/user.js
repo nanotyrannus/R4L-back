@@ -23,10 +23,17 @@ router
     ctx.body += JSON.stringify(result["rows"])
   })
   .post("/signup", function* (){
-
+    let ctx = this;
+    let salt = yield services.generateSalt();
+    let body = ctx.request.body;
+    let result = yield services.createUser(body.username, body.password, salt);
+    ctx.body = JSON.stringify(result);
   })
   .post("/login", function* (){
-    
+    let ctx = this;
+    let body = ctx.request.body;
+    let result = yield services.authenticateUser(body.username, body.password);
+    ctx.body = JSON.stringify(result);
   })
   .post('/polygon', function* () { //set polygon color
     let ctx = this;
