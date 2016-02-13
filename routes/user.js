@@ -45,8 +45,21 @@ router
     // let result = yield db.query(queryString)
   })
   .post("/event", function* () {
-    let ctx = this
-
+    let ctx = this;
+    let body = ctx.request.body;
+    let result = yield services.addEvent(body.eventName);
+    ctx.body = result;
+  })
+  .post("/event/:id", function* () {
+    let ctx = this;
+    let body = ctx.request.body;
+    let result = yield services.addPolygons(body.featureCollection, body.eventId);
+    ctx.body = result;
+  })
+  .get("/events", function* () {
+    let ctx = this;
+    let result = yield services.getEvents();
+    ctx.body = result;
   })
 
 

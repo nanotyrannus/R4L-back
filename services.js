@@ -1,7 +1,8 @@
-"use strict"
+"use strict";
 
 let db = require("./shared/db.js");
 let util = require("util");
+let co = require("co");
 
 module.exports = {
 
@@ -20,15 +21,51 @@ module.exports = {
   },
 
   "addEvent" : function* (eventName) {
-    let queryString = util.format("INSERT INTO events (name) VALUES (%s)", eventName);
+    let queryString = util.format("INSERT INTO events (name) VALUES ('%s')", eventName);
     let result = yield db.query(queryString);
-    return result
+    return result;
   },
   /**
   @param {array} polygons array of one or more polygons to add to the database
   */
   "addPolygons" : function* (featCol, eventId) {
+    // featCol.features.forEach(co.wrap(function* (feat) {
+    //   feat["crs"] = {
+    //     "type" : "name",
+    //     "properties" : {
+    //       "name" : "EPSG:3857"
+    //     }
+    //   };
+    //   let queryString = util.format("INSERT INTO sites (id, pos, geom, event_id) VALUES (%s, %s, '%s', %s)", feat.id, feat.properties.name, JSON.stringify(feat.geometry), eventId);
+    //   let result = yield db.query(queryString);
+    //   console.log("sent!");
+    // }));
+    //yielding an array of promises does not guarantee sequential evaluation
+    try {
+    var result = yield featCol.features.map(function (feat) {
+        feat.geometry["crs"] = {
+          "type" : "name",
+          "properties" : {
+            "name" : "EPSG:4326"
+          }
+        };
+        let queryString = util.format("INSERT INTO sites (id, pos, geom, event_id) VALUES (%s, %s, ST_GeomFromGeoJSON('%s'), %s)", feat.id, feat.properties.name, JSON.stringify(feat.geometry), eventId);
+        return db.query(queryString);
+    });
+  } catch (e) {
+    console.error(e);
+  }
+    return result;
+  },
 
+  "getPolygons" : function* (eventId) {
+
+  },
+
+  "getEvents" : function* (){
+    let queryString = "SELECT * FROM events";
+    let result = yield db.query(queryString);
+    return result.rows;
   },
 
   "createUser" : function* (username, password, salt) {
