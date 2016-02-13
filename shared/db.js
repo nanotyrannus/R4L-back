@@ -11,9 +11,9 @@ module.exports = {
     let client = connectionResults[0]
     let done = connectionResults[1]
 
-    let result = yield client.queryPromise(queryString)
-    done()
-
+    let result = yield client.queryPromise(queryString);
+    done();
+    console.log("done");
     return result
   }
 }

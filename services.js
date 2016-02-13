@@ -41,28 +41,32 @@ module.exports = {
     //   console.log("sent!");
     // }));
     //yielding an array of promises does not guarantee sequential evaluation
-    try {
     var result = yield featCol.features.map(function (feat) {
-        feat.geometry["crs"] = {
-          "type" : "name",
-          "properties" : {
-            "name" : "EPSG:4326"
-          }
-        };
-        let queryString = util.format("INSERT INTO sites (id, pos, geom, event_id) VALUES (%s, %s, ST_GeomFromGeoJSON('%s'), %s)", feat.id, feat.properties.name, JSON.stringify(feat.geometry), eventId);
-        return db.query(queryString);
+      feat.geometry["crs"] = {
+        "type" : "name",
+        "properties" : {
+          "name" : "EPSG:4326"
+        }
+      };
+      let queryString = util.format("INSERT INTO sites (id, pos, geom, properties, event_id) VALUES (%s, %s, ST_GeomFromGeoJSON('%s'), '%s', %s)",
+      feat.id, feat.properties.name,
+      JSON.stringify(feat.geometry),
+      JSON.stringify(feat.properties),
+      eventId);
+      return db.query(queryString);
     });
-  } catch (e) {
-    console.error(e);
-  }
+
     return result;
   },
 
+  //postgres returns JSONB as \" delimited strings. client must parse.
   "getPolygons" : function* (eventId) {
-
+    let queryString = util.format("SELECT id, ST_AsGeoJSON(geom) AS geom, properties FROM sites WHERE event_id = %s", eventId);
+    let result = yield db.query(queryString);
+    return result.rows;
   },
 
-  "getEvents" : function* (){
+  "getEvents" : function* () {
     let queryString = "SELECT * FROM events";
     let result = yield db.query(queryString);
     return result.rows;

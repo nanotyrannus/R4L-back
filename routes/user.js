@@ -14,13 +14,12 @@ router
 
     ctx.body = JSON.stringify(result["rows"]);
   })
-  .get('/polygons', function *(){
+  .get('/polygons/:id', function *(){
     let ctx = this;
+    let body = ctx.request.body;
+    let result = yield services.getPolygons(ctx.params.id);
 
-    let queryString = 'SELECT * FROM POLYGON';
-    let result = yield db.query(queryString);
-
-    ctx.body += JSON.stringify(result["rows"])
+    ctx.body = JSON.stringify(result)
   })
   .post("/signup", function* (){
     let ctx = this;
