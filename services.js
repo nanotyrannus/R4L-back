@@ -106,5 +106,35 @@ module.exports = {
 
   "confirmSession" : function* () {
 
+  },
+
+  "init" : function* () { //initialize tables if not exist
+    yield db.query(`CREATE TABLE IF NOT EXISTS colors (
+      color       text                    not null unique
+    )`);
+
+    yield db.query(`INSERT INTO colors VALUES ('blue'),('red'),('purple'),('none') ON CONFLICT DO NOTHING`);
+
+    yield db.query(`CREATE TABLE IF NOT EXISTS users (
+      id          serial primary key      not null unique,
+      username    text                    not null unique,
+      hash        text                    not null,
+      salt        text                    not null
+    )`);
+
+    yield db.query(`CREATE TABLE IF NOT EXISTS events (
+      id          serial                  not null unique,
+      name        text                    not null
+    )`);
+
+    yield db.query(`CREATE TABLE IF NOT EXISTS sites (
+      id          integer                 not null unique,
+      pos         integer                 not null unique,
+      geom        geometry(Polygon, 4326) not null,
+      properties  JSONB,
+      event_id    integer                 references events(id)
+    )`);
+
+
   }
 }
