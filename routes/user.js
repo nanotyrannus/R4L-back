@@ -34,11 +34,11 @@ router
     let result = yield services.authenticateUser(body.username, body.password);
     ctx.body = JSON.stringify(result);
   })
-  .post('/polygon', function* () { //set polygon color
+  .post('/event/:eventId/polygon/:polygonId', function* () { //set polygon color
     let ctx = this;
     let body = ctx.request.body;
-
-    let result = yield services.setPolygonColor(body.username, body.color, body.event_id, body.polygon_id);
+    let params = ctx.params;
+    let result = yield services.setPolygonColor(body.username, body.color, params.eventId, params.polygonId);
     ctx.body = JSON.stringify(body);
     // let queryString = 'INSERT INTO POLYGON (id,coordinates) VALUES (' + body.id + ',\'' + body.coordinates + '\')';
     // let result = yield db.query(queryString)
@@ -58,6 +58,13 @@ router
   .get("/events", function* () {
     let ctx = this;
     let result = yield services.getEvents();
+    ctx.body = result;
+  })
+  .get("/events/:id/:username", function* () {
+    let ctx = this;
+    console.log("params: " + ctx.params.username + " " + ctx.params.id);
+    let result = yield services.getUserPolygonColors(ctx.params.username, ctx.params.id);
+
     ctx.body = result;
   })
 

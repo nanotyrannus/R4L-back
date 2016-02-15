@@ -6,8 +6,14 @@ let co = require("co");
 
 module.exports = {
 
-  "getUserPolygonColors" : function* (user) {
+  "getUserPolygonColors" : function* (username, eventId) {
+    let queryString = util.format("CREATE TABLE IF NOT EXISTS %s_%s_colors (%s)", username, eventId, "date timestamp not null, color text not null references colors(color), id integer not null unique");
+    yield db.query(queryString);
 
+    queryString = util.format("SELECT * FROM %s_%s_colors", username, eventId);
+    let result = yield db.query(queryString);
+
+    return result.rows;
   },
 
   "authenticateUser" : function* (username, password) {
@@ -79,12 +85,26 @@ module.exports = {
   },
 
   "setPolygonColor" : function* (username, color, eventId, polygonId) {
-    console.log(username, color, eventId, polygonId)
+    let queryString = util.format("CREATE TABLE IF NOT EXISTS %s_%s_colors (%s)",
+    username, eventId, "date timestamp not null, color text not null references colors(color), id integer not null unique");
+    yield db.query(queryString);
+
+    queryString = util.format("SELECT username FROM users WHERE id='%s'", username);
+
+
+    queryString = util.format("INSERT INTO %s_%s_colors VALUES (NOW(), '%s', %s)", username, eventId, color, polygonId);
+    let result = yield db.query(queryString);
+
+    return result;
   },
 
   "generateSalt" : function* () {
     let queryString = "SELECT gen_salt('md5') AS salt";
     let result = yield db.query(queryString);
     return result.rows[0].salt;
+  },
+
+  "confirmSession" : function* () {
+
   }
 }
