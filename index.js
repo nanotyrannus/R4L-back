@@ -4,12 +4,15 @@ let koa      = require('koa');
 
 let config   = require('./config');
 let bodyParser = require('koa-bodyparser');
-
+let services = require('./services');
+let co = require('co');
 
 // koa app
 let app = koa();
 
 app.use(bodyParser());
+
+co.wrap(services.init)();
 
 //inject postgres client as middleware
 app.use(function *(next) {

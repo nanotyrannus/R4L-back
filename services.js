@@ -135,6 +135,6 @@ module.exports = {
       event_id    integer                 references events(id)
     )`);
 
-
+    console.log("Initialization done.")
   }
 }
