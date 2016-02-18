@@ -12,19 +12,20 @@ let app = koa();
 
 app.use(bodyParser());
 
-co.wrap(services.init)();
+co.wrap(function* () {
+    yield services.init();
+    //inject postgres client as middleware
+    app.use(function *(next) {
+      let ctx = this;
+      let start = new Date().valueOf()
+      yield next;
+    });
 
-//inject postgres client as middleware
-app.use(function *(next) {
-  let ctx = this;
-  let start = new Date().valueOf()
-  yield next;
-});
+    let userRoutes = require('./routes/user');
 
-let userRoutes = require('./routes/user');
+    app.use(userRoutes);
 
-app.use(userRoutes);
-
-let port = process.env.port || config.port || 8282;
-console.log("App is listenning on port: " + port);
-app.listen(port);
+    let port = process.env.port || config.port || 8282;
+    console.log("App is listenning on port: " + port);
+    app.listen(port);
+})();

@@ -16,13 +16,26 @@ module.exports = {
     return result.rows;
   },
 
-  "authenticateUser" : function* (username, password) {
-    let queryString = util.format("SELECT hash = crypt('%s', salt) AS is_match from users where username='%s'", password, username);
+  "authenticateUser" : function* (ctx, username, password) {
+    let queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s'", password, username);
     let result = yield db.query(queryString);
     if (result.rowCount > 0) {
-      return result.rows[0].is_match
+      var response = {
+        "success" : result.rows[0].is_match
+      };
+      if (response.success) {
+        response.id = result.rows[0].id;
+      } else {
+        response.id = null;
+        response.message = "Unable to authenticate with "
+      }
+      return response;
     } else {
-      return false
+      return {
+        "sucess" : false,
+        "user_id" : null,
+        "message" : "Username not recognized."
+      }
     }
   },
 
@@ -79,9 +92,11 @@ module.exports = {
   },
 
   "createUser" : function* (username, password, salt) {
-    let queryString = util.format("INSERT INTO users (username, hash, salt) values ('%s', crypt('%s', '%s'), '%s')", username, password, salt, salt);
-    let result = yield db.query(queryString);
-    return result
+    let queryString = util.format("INSERT INTO users (username, hash, salt) values ('%s', crypt('%s', '%s'), '%s') RETURNING id", username, password, salt, salt);
+    var result = yield db.query(queryString);
+    return {
+      "user_id" : result.rows[0].id
+    };
   },
 
   "setPolygonColor" : function* (username, color, eventId, polygonId) {
@@ -136,5 +151,9 @@ module.exports = {
     )`);
 
     console.log("Initialization done.")
+  },
+
+  "getUserId" : function* (user) {
+
   }
 }

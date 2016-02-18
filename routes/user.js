@@ -19,19 +19,29 @@ router
     let body = ctx.request.body;
     let result = yield services.getPolygons(ctx.params.id);
 
-    ctx.body = JSON.stringify(result)
+    ctx.body = result;
   })
-  .post("/signup", function* (){
+  .post("/user/create", function* () {
     let ctx = this;
     let salt = yield services.generateSalt();
     let body = ctx.request.body;
-    let result = yield services.createUser(body.username, body.password, salt);
-    ctx.body = JSON.stringify(result);
+
+    try {
+      var result = yield services.createUser(body.user, body.password, salt);
+    } catch (e) {
+      result = {
+        "user_id" : null,
+        "message" : e.detail
+      };
+      ctx.status = 422;
+    }
+
+    ctx.body = result;
   })
-  .post("/login", function* (){
+  .post("/user/login", function* () {
     let ctx = this;
     let body = ctx.request.body;
-    let result = yield services.authenticateUser(body.username, body.password);
+    let result = yield services.authenticateUser(ctx, body.user, body.password);
     ctx.body = JSON.stringify(result);
   })
   .post('/event/:eventId/polygon/:polygonId', function* () { //set polygon color
