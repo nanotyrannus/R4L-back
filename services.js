@@ -7,7 +7,10 @@ let co = require("co");
 module.exports = {
 
   "getUserPolygonColors" : function* (username, eventId) {
-    let queryString = util.format("CREATE TABLE IF NOT EXISTS %s_%s_colors (%s)", username, eventId, "date timestamp not null, color text not null references colors(color), id integer not null unique");
+    let queryString = util.format(`CREATE TABLE IF NOT EXISTS %s_%s_colors (
+      date timestamp not null,
+      color text not null references colors(color),
+      id integer not null unique`), username, eventId);
     yield db.query(queryString);
 
     queryString = util.format("SELECT * FROM %s_%s_colors", username, eventId);
@@ -16,7 +19,7 @@ module.exports = {
     return result.rows;
   },
 
-  "authenticateUser" : function* (ctx, username, password) {
+  "authenticateUser" : function* (username, password) {
     let queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s'", password, username);
     let result = yield db.query(queryString);
     if (result.rowCount > 0) {
@@ -24,10 +27,10 @@ module.exports = {
         "success" : result.rows[0].is_match
       };
       if (response.success) {
-        response.id = result.rows[0].id;
+        response.user_id = result.rows[0].id;
       } else {
-        response.id = null;
-        response.message = "Unable to authenticate with "
+        response.user_id = null;
+        response.message = "Unable to authenticate with supplied credentials.";
       }
       return response;
     } else {
@@ -35,7 +38,7 @@ module.exports = {
         "sucess" : false,
         "user_id" : null,
         "message" : "Username not recognized."
-      }
+      };
     }
   },
 
@@ -95,7 +98,8 @@ module.exports = {
     let queryString = util.format("INSERT INTO users (username, hash, salt) values ('%s', crypt('%s', '%s'), '%s') RETURNING id", username, password, salt, salt);
     var result = yield db.query(queryString);
     return {
-      "user_id" : result.rows[0].id
+      "user_id" : result.rows[0].id,
+      "success" : true
     };
   },
 
@@ -125,10 +129,11 @@ module.exports = {
 
   "init" : function* () { //initialize tables if not exist
     yield db.query(`CREATE TABLE IF NOT EXISTS colors (
-      color       text                    not null unique
+      color       text                    not null unique,
+      status      text                    not null unique
     )`);
 
-    yield db.query(`INSERT INTO colors VALUES ('blue'),('red'),('purple'),('none') ON CONFLICT DO NOTHING`);
+    yield db.query(`INSERT INTO colors VALUES ('blue', 'undamaged'),('red', 'damaged'),('purple', 'unknown'),('none', 'unranked') ON CONFLICT DO NOTHING`);
 
     yield db.query(`CREATE TABLE IF NOT EXISTS users (
       id          serial primary key      not null unique,

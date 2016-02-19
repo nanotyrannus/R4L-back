@@ -31,18 +31,26 @@ router
     } catch (e) {
       result = {
         "user_id" : null,
+        "success" : false,
         "message" : e.detail
       };
       ctx.status = 422;
     }
-
     ctx.body = result;
   })
   .post("/user/login", function* () {
     let ctx = this;
     let body = ctx.request.body;
-    let result = yield services.authenticateUser(ctx, body.user, body.password);
-    ctx.body = JSON.stringify(result);
+    try {
+      var result = yield services.authenticateUser(body.user, body.password);
+    } catch (e) {
+      result = {
+        "user_id" : null,
+        "message" : e
+      };
+      ctx.status = 401;
+    }
+    ctx.body = result;
   })
   .post('/event/:eventId/polygon/:polygonId', function* () { //set polygon color
     let ctx = this;
