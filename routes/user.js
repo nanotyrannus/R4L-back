@@ -70,7 +70,7 @@ router
   .post("/event/:id", function* () {
     let ctx = this;
     let body = ctx.request.body;
-    let result = yield services.addPolygons(body.featureCollection, body.eventId);
+    let result = yield services.addPolygons(body.featureCollection, ctx.params.id);
     ctx.body = result;
   })
   .get("/events", function* () {

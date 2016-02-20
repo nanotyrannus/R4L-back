@@ -10,7 +10,7 @@ module.exports = {
     let queryString = util.format(`CREATE TABLE IF NOT EXISTS %s_%s_colors (
       date timestamp not null,
       color text not null references colors(color),
-      id integer not null unique`), username, eventId);
+      id integer not null unique)`, username, eventId);
     yield db.query(queryString);
 
     queryString = util.format("SELECT * FROM %s_%s_colors", username, eventId);
@@ -75,7 +75,7 @@ module.exports = {
       JSON.stringify(feat.geometry),
       JSON.stringify(feat.properties),
       eventId);
-      return db.query(queryString);
+      return db.query(queryString.replace(/\n/,""));
     });
 
     return result;
@@ -144,7 +144,7 @@ module.exports = {
 
     yield db.query(`CREATE TABLE IF NOT EXISTS events (
       id          serial                  not null unique,
-      name        text                    not null
+      name        text                    not null unique
     )`);
 
     yield db.query(`CREATE TABLE IF NOT EXISTS sites (
@@ -155,10 +155,9 @@ module.exports = {
       event_id    integer                 references events(id)
     )`);
 
+    yield db.query(`INSERT INTO events VALUES (100, 'Test') ON CONFLICT DO NOTHING`);
+
+
     console.log("Initialization done.")
-  },
-
-  "getUserId" : function* (user) {
-
   }
 }
