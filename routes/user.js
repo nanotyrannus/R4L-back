@@ -5,6 +5,13 @@ let db = require("../shared/db.js");
 let services = require("../services.js");
 
 router
+  .get("/ping", function* () {
+    let ctx = this;
+    ctx.body = {
+      "message" : "pong!",
+      "time" : new Date()
+    };
+  })
   .get('/polygon/:id', function* () {
     let ctx = this;
 
