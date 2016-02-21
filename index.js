@@ -13,7 +13,11 @@ let app = koa();
 app.use(bodyParser());
 
 co.wrap(function* () {
+  try {
     yield services.init();
+  } catch(e) {
+    console.error(e);
+  }
     //inject postgres client as middleware
     app.use(function *(next) {
       let ctx = this;
