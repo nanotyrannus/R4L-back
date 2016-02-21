@@ -10,7 +10,7 @@ module.exports = {
       var timestamp = new Date();
       console.log("db.query called: ", queryString, "\nTime:", timestamp);
     }
-    let connectionResults = yield pg.connectPromise(config.postgis_mac)
+    let connectionResults = yield pg.connectPromise(config.aws)
     let client = connectionResults[0]
     let done = connectionResults[1]
 
