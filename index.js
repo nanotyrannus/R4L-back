@@ -30,6 +30,11 @@ co.wrap(function* () {
     app.use(userRoutes);
 
     let port = process.env.port || config.port || 8282;
-    console.log("App is listenning on port: " + port);
-    app.listen(port);
+
+    try {
+      app.listen(port)
+      console.log("App is listenning on port: " + port);
+    } catch (e) {
+      console.error(e)
+    }
 })();
