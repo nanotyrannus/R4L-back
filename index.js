@@ -29,7 +29,7 @@ co.wrap(function* () {
     let userRoutes = require('./routes/user');
 
     app.use(userRoutes);
-    let port = config.portk || process.env.port || 8282;
+    let port = config.port || process.env.port || 8282;
     app.listen(port)
     console.log("App is listenning on port: " + port);
   } catch (e) {
