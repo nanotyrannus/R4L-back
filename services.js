@@ -85,7 +85,7 @@ module.exports = {
   "getPolygons" : function* (eventId) {
     let queryString = util.format("SELECT id, ST_AsGeoJSON(geom) AS geom, properties FROM sites WHERE event_id = %s", eventId);
     let result = yield db.query(queryString);
-    return result.rows;
+    return { "features" : result.rows, "type" : "FeatureCollection"};
   },
 
   "getEvents" : function* () {
