@@ -157,7 +157,6 @@ module.exports = {
 
     yield db.query(`INSERT INTO events VALUES (100, 'Test') ON CONFLICT DO NOTHING`);
 
-
     console.log("Initialization done.")
     return;
   }
