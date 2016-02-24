@@ -3,8 +3,13 @@
 let router = require('koa-router')();
 let db = require("../shared/db.js");
 let services = require("../services.js");
+let send = require("koa-send");
 
 router
+  .get("/", function* () {
+    let ctx = this;
+    yield send(ctx, "/Users/rcconsta/siri/package.json", {"root":"/"});
+  })
   .get("/ping", function* () {
     let ctx = this;
     ctx.body = {
