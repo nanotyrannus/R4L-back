@@ -12,13 +12,13 @@ let app = koa();
 
 app.use(bodyParser());
 
-try {
 co.wrap(function* () {
   try {
     yield services.init();
   } catch(e) {
     console.error(e);
   }
+  try {
     //inject postgres client as middleware
     app.use(function *(next) {
       let ctx = this;
@@ -32,7 +32,7 @@ co.wrap(function* () {
     let port = config.portk || process.env.port || 8282;
     app.listen(port)
     console.log("App is listenning on port: " + port);
+  } catch (e) {
+    console.log(e)
+  }
 })();
-} catch (e) {
-  console.log(e)
-}
