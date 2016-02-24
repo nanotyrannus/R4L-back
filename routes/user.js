@@ -15,7 +15,7 @@ router
       yield send(ctx, front + "public/index.html", {"root" : "/"});
     } else {
       //Default value for root is not root, but the location of source code file.
-      yield send(ctx, ctx.path, {"root": process.env.R4L_FRONT + "/public"});
+      yield send(ctx, "public/" + ctx.path, {"root": front});
     }
   })
   .get("/ping", function* () {
