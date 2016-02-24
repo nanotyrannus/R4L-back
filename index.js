@@ -29,14 +29,7 @@ co.wrap(function* () {
 
     app.use(userRoutes);
 
-    let port = process.env.port || config.port || 8282;
-
-
+    let port = config.porg || process.env.port || 8282;
+    app.listen(port)
+    console.log("App is listenning on port: " + port);
 })();
-
-try {
-  app.listen(port)
-  console.log("App is listenning on port: " + port);
-} catch (e) {
-  console.log(e)
-}
