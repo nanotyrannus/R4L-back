@@ -65,7 +65,7 @@ router
     let body = ctx.request.body;
     let params = ctx.params;
     let result = yield services.setPolygonColor(body.username, body.color, params.eventId, params.polygonId);
-    ctx.body = JSON.stringify(body);
+    ctx.body = result;
     // let queryString = 'INSERT INTO POLYGON (id,coordinates) VALUES (' + body.id + ',\'' + body.coordinates + '\')';
     // let result = yield db.query(queryString)
   })
