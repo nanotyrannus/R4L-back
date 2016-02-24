@@ -159,5 +159,6 @@ module.exports = {
 
 
     console.log("Initialization done.")
+    return;
   }
 }
