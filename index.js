@@ -23,6 +23,16 @@ co.wrap(function* () {
     app.use(function *(next) {
       let ctx = this;
       let start = new Date().valueOf()
+
+      if (ctx.path === "/") {
+        console.log("Index requested:", front + "public/index.html");
+        yield send(ctx, front + "public/index.html", {"root" : "/"});
+      } else {
+        //Default value for root is not root, but the location of source code file.
+        console.log(front + "public/" + ctx.path)
+        yield send(ctx, "public/" + ctx.path, {"root": front});
+      }
+
       yield next;
     });
 
