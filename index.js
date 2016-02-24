@@ -1,7 +1,7 @@
 'use strict';
 
 let koa      = require('koa');
-
+let cors = require("koa-cors");
 let config   = require('./config');
 let bodyParser = require('koa-bodyparser');
 let services = require('./services');
@@ -12,7 +12,7 @@ let front = process.env.R4L_FRONT || "/home/ubuntu/radarforlife/front/"
 
 // koa app
 let app = koa();
-
+app.use(cors())
 app.use(bodyParser());
 
 co.wrap(function* () {
