@@ -3,9 +3,7 @@
 let router = require('koa-router')();
 let db = require("../shared/db.js");
 let services = require("../services.js");
-let send = require("koa-send");
 
-let front = process.env.R4L_FRONT || "/home/ubuntu/radarforlife/front/"
 
 router
   .get("/ping", function* () {

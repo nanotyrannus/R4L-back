@@ -6,6 +6,9 @@ let config   = require('./config');
 let bodyParser = require('koa-bodyparser');
 let services = require('./services');
 let co = require('co');
+let send = require("koa-send");
+
+let front = process.env.R4L_FRONT || "/home/ubuntu/radarforlife/front/"
 
 // koa app
 let app = koa();
