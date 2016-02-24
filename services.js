@@ -111,7 +111,7 @@ module.exports = {
     queryString = util.format("SELECT username FROM users WHERE id='%s'", username);
 
 
-    queryString = util.format("INSERT INTO %s_%s_colors VALUES (NOW(), '%s', %s)", username, eventId, color, polygonId);
+    queryString = util.format("INSERT INTO %s_%s_colors (date, color, id) VALUES (NOW(), '%s', %s) ON CONFLICT DO UPDATE SET color=excluded.color", username, eventId, color, polygonId);
     let result = yield db.query(queryString);
 
     return result;
