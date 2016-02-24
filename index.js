@@ -35,6 +35,6 @@ co.wrap(function* () {
       app.listen(port)
       console.log("App is listenning on port: " + port);
     } catch (e) {
-      console.error(e)
+      console.log(e)
     }
 })();
