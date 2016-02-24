@@ -15,6 +15,7 @@ router
       yield send(ctx, front + "public/index.html", {"root" : "/"});
     } else {
       //Default value for root is not root, but the location of source code file.
+      console.log(front + "public/" + ctx.path)
       yield send(ctx, "public/" + ctx.path, {"root": front});
     }
   })
