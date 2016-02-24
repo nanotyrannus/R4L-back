@@ -8,8 +8,12 @@ let send = require("koa-send");
 router
   .get("/", function* () {
     let ctx = this;
-    //Default value for root is not root, but the location of source code file.
-    yield send(ctx, ctx.path, {"root": process.env.R4L_FRONT + "/public"});
+    if (ctx.path === "/") {
+      console.log("index requested")
+    } else {
+      //Default value for root is not root, but the location of source code file.
+      yield send(ctx, ctx.path, {"root": process.env.R4L_FRONT + "/public"});
+    }
   })
   .get("/ping", function* () {
     let ctx = this;
