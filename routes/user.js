@@ -8,6 +8,7 @@ let send = require("koa-send");
 router
   .get("/", function* () {
     let ctx = this;
+    //Default value for root is not root, but the location of source code file.
     yield send(ctx, "/Users/rcconsta/siri/package.json", {"root":"/"});
   })
   .get("/ping", function* () {
