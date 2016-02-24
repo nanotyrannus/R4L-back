@@ -31,10 +31,12 @@ co.wrap(function* () {
 
     let port = process.env.port || config.port || 8282;
 
-    try {
-      app.listen(port)
-      console.log("App is listenning on port: " + port);
-    } catch (e) {
-      console.log(e)
-    }
+
 })();
+
+try {
+  app.listen(port)
+  console.log("App is listenning on port: " + port);
+} catch (e) {
+  console.log(e)
+}
