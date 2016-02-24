@@ -12,7 +12,7 @@ router
     let ctx = this;
     if (ctx.path === "/") {
       console.log("Index requested:", front + "public/index.html");
-      yield send(ctx, front + "public/index.html");
+      yield send(ctx, front + "public/index.html", {"root" : "/"});
     } else {
       //Default value for root is not root, but the location of source code file.
       yield send(ctx, ctx.path, {"root": process.env.R4L_FRONT + "/public"});
