@@ -47,21 +47,8 @@ module.exports = {
     let result = yield db.query(queryString);
     return result;
   },
-  /**
-  @param {array} polygons array of one or more polygons to add to the database
-  */
+
   "addPolygons" : function* (featCol, eventId) {
-    // featCol.features.forEach(co.wrap(function* (feat) {
-    //   feat["crs"] = {
-    //     "type" : "name",
-    //     "properties" : {
-    //       "name" : "EPSG:3857"
-    //     }
-    //   };
-    //   let queryString = util.format("INSERT INTO sites (id, pos, geom, event_id) VALUES (%s, %s, '%s', %s)", feat.id, feat.properties.name, JSON.stringify(feat.geometry), eventId);
-    //   let result = yield db.query(queryString);
-    //   console.log("sent!");
-    // }));
     //yielding an array of promises does not guarantee sequential evaluation
     var result = yield featCol.features.map(function (feat) {
       feat.geometry["crs"] = {
@@ -82,9 +69,10 @@ module.exports = {
   },
 
   //postgres returns JSONB as \" delimited strings. client must parse.
-  "getPolygons" : function* (eventId) {
+  "getEventPolygons" : function* (eventId) {
     let queryString = util.format("SELECT id, ST_AsGeoJSON(geom) AS geometry, properties FROM sites WHERE event_id = %s", eventId);
     let result = yield db.query(queryString);
+
     return { "features" : result.rows, "type" : "FeatureCollection"};
   },
 
@@ -107,9 +95,6 @@ module.exports = {
     let queryString = util.format("CREATE TABLE IF NOT EXISTS %s_%s_colors (%s)",
     username, eventId, "date timestamp not null, color text not null references colors(color), id integer not null unique");
     yield db.query(queryString);
-
-    queryString = util.format("SELECT username FROM users WHERE id='%s'", username);
-
 
     queryString = util.format("INSERT INTO %s_%s_colors (date, color, id) VALUES (NOW(), '%s', %s) ON CONFLICT ON CONSTRAINT %s_%s_colors_id_key DO UPDATE SET color=excluded.color, date=NOW() RETURNING *", username, eventId, color, polygonId, username, eventId);
     let result = yield db.query(queryString);

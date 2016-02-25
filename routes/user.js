@@ -22,13 +22,13 @@ router
 
     ctx.body = JSON.stringify(result["rows"]);
   })
-  .get('/polygons/:id', function *(){
-    let ctx = this;
-    let body = ctx.request.body;
-    let result = yield services.getPolygons(ctx.params.id);
-
-    ctx.body = result;
-  })
+  // .get('/polygons/:id', function *(){
+  //   let ctx = this;
+  //   let body = ctx.request.body;
+  //   let result = yield services.getPolygons(ctx.params.id);
+  //
+  //   ctx.body = result;
+  // })
   .post("/user/create", function* () {
     let ctx = this;
     let salt = yield services.generateSalt();
@@ -81,16 +81,14 @@ router
     let result = yield services.addPolygons(body.featureCollection, ctx.params.id);
     ctx.body = result;
   })
-  .get("/events", function* () {
+  .get("/event", function* () {
     let ctx = this;
     let result = yield services.getEvents();
     ctx.body = result;
   })
-  .get("/events/:id/:username", function* () {
+  .get("/user/:username/event/:id", function* () {
     let ctx = this;
-    console.log("params: " + ctx.params.username + " " + ctx.params.id);
     let result = yield services.getUserPolygonColors(ctx.params.username, ctx.params.id);
-
     ctx.body = result;
   })
 
