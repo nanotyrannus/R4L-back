@@ -22,13 +22,13 @@ router
 
     ctx.body = JSON.stringify(result["rows"]);
   })
-  // .get('/polygons/:id', function *(){
-  //   let ctx = this;
-  //   let body = ctx.request.body;
-  //   let result = yield services.getPolygons(ctx.params.id);
-  //
-  //   ctx.body = result;
-  // })
+  .get('/event/:id', function *(){
+    let ctx = this;
+    let body = ctx.request.body;
+    let result = yield services.getEventPolygons(ctx.params.id);
+
+    ctx.body = result;
+  })
   .post("/user/create", function* () {
     let ctx = this;
     let salt = yield services.generateSalt();
