@@ -87,7 +87,7 @@ router
   })
   .get("/user/:username/event/:id", function* () {
     let ctx = this;
-    let result = yield services.getUserPolygonColors(ctx.params.username, ctx.params.id);
+    let result = yield services.getUserPolygons(ctx.params.username, ctx.params.id);
     ctx.body = result;
   })
 
