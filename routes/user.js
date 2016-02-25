@@ -8,24 +8,17 @@ let services = require("../services.js");
 router
   .get("/ping", function* () {
     let ctx = this;
-    ctx.body = {
-      "message" : "pong!",
-      "time" : new Date()
-    };
-  })
-  .get('/polygon/:id', function* () {
-    let ctx = this;
-
-    let queryString = 'SELECT FROM POLYGON WHERE id = ' + ctx.params.id;
-    let result = yield db.query(queryString);
-
-    ctx.body = JSON.stringify(result["rows"]);
+    yield services.ping.bind(ctx);
   })
   .get('/event/:id', function *(){
-    let ctx = this;
-    let body = ctx.request.body;
-    let result = yield services.getEventPolygons(ctx.params.id);
-
+    var ctx = this
+    var body = ctx.request.body
+    try {
+      var result = yield services.getEventPolygons(ctx.params.id)
+    } catch (e) {
+      result.message = e
+      ctx.status = 404
+    }
     ctx.body = result;
   })
   .post("/user/create", function* () {
