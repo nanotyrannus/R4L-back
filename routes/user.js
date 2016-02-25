@@ -8,7 +8,11 @@ let services = require("../services.js");
 router
   .get("/ping", function* () {
     let ctx = this;
-    yield services.ping.bind(ctx);
+    yield services.ping().bind()
+    ctx.body = {
+      "message" : "pong!",
+      "time" : new Date()
+    };
   })
   .get('/event/:id', function *(){
     var ctx = this
