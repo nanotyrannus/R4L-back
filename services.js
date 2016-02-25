@@ -5,12 +5,6 @@ let util = require("util");
 let co = require("co");
 
 module.exports = {
-  "ping" : function* () {
-    this.status = 500
-    this.body = {
-      "message" : "pingpong"
-    }
-  },
   //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
   "getUserPolygons" : function* (username, eventId) {
     let tableName = util.format("%s_%s_colors", username, eventId);
