@@ -15,7 +15,7 @@ module.exports = {
     yield db.query(queryString);
 
     queryString = util.format(`
-      SELECT a.id, ST_AsGeoJSON(geom) AS geometry, properties || jsonb_build_object('color', b.color)
+      SELECT a.id, ST_AsGeoJSON(geom) AS geometry, (properties || jsonb_build_object('color', b.color)) AS properties
       FROM sites AS a FULL OUTER JOIN %s AS b ON a.id=b.id`, tableName);
     let result = yield db.query(queryString);
 
