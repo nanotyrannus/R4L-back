@@ -8,9 +8,11 @@ let services = require("../services.js");
 router
   .get("/ping", function* () {
     let ctx = this;
+    var date = new Date()
     ctx.body = {
       "message" : "pong!",
-      "time" : new Date()
+      "time" : date.valueOf(),
+      "date" : date
     };
   })
   .get('/event/:id', function *(){
