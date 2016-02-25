@@ -19,7 +19,6 @@ router
     let queryString = 'SELECT FROM POLYGON WHERE id = ' + ctx.params.id;
     let result = yield db.query(queryString);
 
-
     ctx.body = JSON.stringify(result["rows"]);
   })
   .get('/event/:id', function *(){

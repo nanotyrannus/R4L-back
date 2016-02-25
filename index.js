@@ -12,7 +12,7 @@ let front = process.env.R4L_FRONT || "/home/ubuntu/radarforlife/front/"
 
 // koa app
 let app = koa();
-app.use(cors())
+app.u
 app.use(bodyParser());
 
 co.wrap(function* () {

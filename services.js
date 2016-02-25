@@ -5,15 +5,18 @@ let util = require("util");
 let co = require("co");
 
 module.exports = {
-
-  "getUserPolygonColors" : function* (username, eventId) {
-    let queryString = util.format(`CREATE TABLE IF NOT EXISTS %s_%s_colors (
+  //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
+  "getUserPolygons" : function* (username, eventId) {
+    let tableName = util.format("%s_%s_colors", username, eventId);
+    let queryString = util.format(`CREATE TABLE IF NOT EXISTS %s (
       date timestamp not null,
       color text not null references colors(color),
-      id integer not null unique)`, username, eventId);
+      id integer not null unique)`, tableName);
     yield db.query(queryString);
 
-    queryString = util.format("SELECT * FROM %s_%s_colors", username, eventId);
+    queryString = util.format(`
+      SELECT a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color
+      FROM sites AS a FULL OUTER JOIN %s AS b ON a.id=b.id`, tableName);
     let result = yield db.query(queryString);
 
     return result.rows;
@@ -92,11 +95,20 @@ module.exports = {
   },
 
   "setPolygonColor" : function* (username, color, eventId, polygonId) {
-    let queryString = util.format("CREATE TABLE IF NOT EXISTS %s_%s_colors (%s)",
-    username, eventId, "date timestamp not null, color text not null references colors(color), id integer not null unique");
+    let tableName = util.format("%s_%s_colors", username, eventId);
+    let queryString = util.format(`CREATE TABLE IF NOT EXISTS %s (
+      date        timestamp               not null,
+      color       text                    not null references colors(color),
+      id          integer                 not null unique
+    )`, tableName);
     yield db.query(queryString);
 
-    queryString = util.format("INSERT INTO %s_%s_colors (date, color, id) VALUES (NOW(), '%s', %s) ON CONFLICT ON CONSTRAINT %s_%s_colors_id_key DO UPDATE SET color=excluded.color, date=NOW() RETURNING *", username, eventId, color, polygonId, username, eventId);
+    queryString = util.format(`
+      INSERT INTO %s (date, color, id)
+      VALUES (NOW(), '%s', %s)
+      ON CONFLICT ON CONSTRAINT %s_%s_colors_id_key
+      DO UPDATE SET color=excluded.color, date=NOW()
+      RETURNING *`, tableName, color, polygonId, username, eventId);
     let result = yield db.query(queryString);
 
     return result;
