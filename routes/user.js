@@ -1,19 +1,19 @@
 'use strict';
 
-let router = require('koa-router')();
-let db = require("../shared/db.js");
-let services = require("../services.js");
+let router = require('koa-router')()
+let db = require("../shared/db.js")
+let services = require("../services.js")
 
 
 router
   .get("/ping", function* () {
-    let ctx = this;
+    let ctx = this
     var date = new Date()
     ctx.body = {
       "message" : "pong!",
       "time" : date.valueOf(),
       "date" : date
-    };
+    }
   })
   .get('/event/:id', function *(){
     var ctx = this
@@ -79,8 +79,8 @@ router
     ctx.body = result;
   })
   .get("/event", function* () {
-    let ctx = this;
-    let result = yield services.getEvents();
+    var ctx = this;
+    var result = yield services.getEvents();
     ctx.body = result;
   })
   .get("/user/:username/event/:id", function* () {
