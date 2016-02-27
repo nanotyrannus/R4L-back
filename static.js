@@ -19,3 +19,5 @@ app.use(function* () {
     yield send(ctx, "public" + ctx.path, {"root": front});
   }
 })
+
+app.listen(80)
