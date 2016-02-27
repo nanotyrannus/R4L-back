@@ -2,7 +2,7 @@
 
 var koa = require("koa")
 var config = require("./config")
-var send = require("send")
+var send = require("koa-send")
 
 var front = process.env.R4L_FRONT || "/home/ubuntu/radarforlife/front/"
 
