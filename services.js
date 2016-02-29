@@ -15,7 +15,14 @@ module.exports = {
     yield db.query(queryString)
 
     queryString = util.format(`
-      SELECT a.id, ST_AsGeoJSON(geom) AS geometry, (properties || jsonb_build_object('status', b.status)) AS properties, 'Feature' AS type
+      SELECT a.id, ST_AsGeoJSON(geom) AS geometry, (properties || jsonb_build_object('status',
+          (
+            SELECT
+            CASE WHEN b.status IS NULL THEN 'NOT_EVALUATED'
+            ELSE b.status
+            END
+          )
+      )) AS properties, 'Feature' AS type
       FROM sites AS a
       FULL OUTER JOIN %s AS b ON a.id=b.id`, tableName);
     try {
