@@ -134,11 +134,12 @@ module.exports = {
     let queryString = util.format("INSERT INTO users (username, hash, salt) values ('%s', crypt('%s', '%s'), '%s') RETURNING id", username, password, salt, salt);
     try {
       var result = yield db.query(queryString);
+      var userId = result.rows[0].id
       var message = null
       var status = 200
       var success = true
     } catch (e) {
-      console.log(e)
+      userId = null
       message = e
       status = 401
       success = false
@@ -146,7 +147,7 @@ module.exports = {
     return {
       "status" : status,
       "message" : message,
-      "user_id" : result.rows[0].id,
+      "user_id" : userId,
       "success" : success
     };
   },
