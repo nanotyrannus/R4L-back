@@ -172,12 +172,18 @@ module.exports = {
       var result = yield db.query(queryString)
       var status = 200
       var message = null
+      var success = true
     } catch (e) {
       status = 401
       message = e
+      success = false
     }
 
-    return result
+    return {
+      "status" : status,
+      "message" : message,
+      "success" : success
+    }
   },
 
   "generateSalt" : function* () {
