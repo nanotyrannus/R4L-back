@@ -27,16 +27,7 @@ router
     let salt = yield services.generateSalt();
     let body = ctx.request.body;
 
-    try {
-      var result = yield services.createUser(body.username, body.password, salt);
-    } catch (e) {
-      result = {
-        "user_id" : null,
-        "success" : false,
-        "message" : e.detail
-      };
-      ctx.status = 422;
-    }
+    var result = yield services.createUser(body.username, body.password, salt);
     ctx.body = result;
   })
   .post("/user/login", function* () {
