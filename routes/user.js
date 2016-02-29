@@ -28,7 +28,7 @@ router
     let body = ctx.request.body;
 
     try {
-      var result = yield services.createUser(body.user, body.password, salt);
+      var result = yield services.createUser(body.username, body.password, salt);
     } catch (e) {
       result = {
         "user_id" : null,
@@ -42,7 +42,7 @@ router
   .post("/user/login", function* () {
     let ctx = this;
     let body = ctx.request.body;
-    var result = yield services.authenticateUser(body.user, body.password);
+    var result = yield services.authenticateUser(body.username, body.password);
     ctx.body = result;
   })
   .post('/event/:eventId/polygon/:polygonId', function* () { //set polygon color
