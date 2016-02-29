@@ -176,7 +176,7 @@ module.exports = {
       status      text                    not null unique
     )`)
 
-    yield db.query(`INSERT INTO colors VALUES ('DAMAGE'),('NO_DAMAGE'),('UNSURE'),('NOT_EVALUATED') ON CONFLICT DO NOTHING`)
+    yield db.query(`INSERT INTO states VALUES ('DAMAGE'),('NO_DAMAGE'),('UNSURE'),('NOT_EVALUATED') ON CONFLICT DO NOTHING`)
 
     yield db.query(`CREATE TABLE IF NOT EXISTS users (
       id          serial primary key      not null unique,
