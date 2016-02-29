@@ -4,15 +4,17 @@ let router    = require('koa-router')()
 let db        = require("../shared/db.js")
 let services  = require("../services.js")
 
-
 router
   .get("/ping", function* () {
     let ctx = this
+    var n = ctx.session.views || 0
+    ctx.session.views = ++n
     var date = new Date()
     ctx.body = {
       "message" : "pong!",
       "time" : date.valueOf(),
-      "date" : date
+      "date" : date,
+      "views" n
     }
   })
   .get('/event/:id', function *(){
