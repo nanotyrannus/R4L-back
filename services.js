@@ -124,7 +124,7 @@ module.exports = {
     }
     return {
       "status" : status,
-      "message" message,
+      "message" : message,
       "user_id" : result.rows[0].id,
       "success" : success
     };
