@@ -7,15 +7,15 @@ let co    = require("co")
 module.exports = {
   //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
   "getUserPolygons" : function* (username, eventId) {
-    let tableName = util.format("%s_%s_colors", username, eventId);
+    let tableName = util.format("%s_%s_states", username, eventId);
     let queryString = util.format(`CREATE TABLE IF NOT EXISTS %s (
-      date timestamp not null,
-      color text not null references colors(color),
-      id integer not null unique)`, tableName);
-    yield db.query(queryString);
+      date        timestamp         not null,
+      status      text              not null references states(status) DEFAULT 'NOT_EVALUATED',
+      id          integer           not null unique)`, tableName)
+    yield db.query(queryString)
 
     queryString = util.format(`
-      SELECT a.id, ST_AsGeoJSON(geom) AS geometry, (properties || jsonb_build_object('color', b.color)) AS properties, 'Feature' AS type
+      SELECT a.id, ST_AsGeoJSON(geom) AS geometry, (properties || jsonb_build_object('status', b.status)) AS properties, 'Feature' AS type
       FROM sites AS a
       FULL OUTER JOIN %s AS b ON a.id=b.id`, tableName);
     try {
@@ -133,22 +133,22 @@ module.exports = {
     };
   },
 
-  "setPolygonColor" : function* (username, color, eventId, polygonId) {
-    let tableName = util.format("%s_%s_colors", username, eventId)
+  "setPolygonColor" : function* (username, status, eventId, polygonId) {
+    let tableName = util.format("%s_%s_states", username, eventId)
     let queryString = util.format(`CREATE TABLE IF NOT EXISTS %s (
       date        timestamp               not null,
-      color       text                    not null references colors(color),
+      status      text                    not null references states(status),
       id          integer                 not null unique
     )`, tableName)
 
     try {
       yield db.query(queryString)
       queryString = util.format(`
-        INSERT INTO %s (date, color, id)
+        INSERT INTO %s (date, status, id)
         VALUES (NOW(), '%s', %s)
-        ON CONFLICT ON CONSTRAINT %s_%s_colors_id_key
-        DO UPDATE SET color=excluded.color, date=NOW()
-        RETURNING *`, tableName, color, polygonId, username, eventId)
+        ON CONFLICT ON CONSTRAINT %s_%s_states_id_key
+        DO UPDATE SET status=excluded.status, date=NOW()
+        RETURNING *`, tableName, status, polygonId, username, eventId)
 
       var result = yield db.query(queryString)
       var status = 200
@@ -172,12 +172,11 @@ module.exports = {
   },
 
   "init" : function* () { //initialize tables if not exist
-    yield db.query(`CREATE TABLE IF NOT EXISTS colors (
-      color       text                    not null unique,
+    yield db.query(`CREATE TABLE IF NOT EXISTS states (
       status      text                    not null unique
     )`)
 
-    yield db.query(`INSERT INTO colors VALUES ('blue', 'undamaged'),('red', 'damaged'),('purple', 'unknown'),('none', 'unranked') ON CONFLICT DO NOTHING`)
+    yield db.query(`INSERT INTO colors VALUES ('DAMAGE'),('NO_DAMAGE'),('UNSURE'),('NOT_EVALUATED') ON CONFLICT DO NOTHING`)
 
     yield db.query(`CREATE TABLE IF NOT EXISTS users (
       id          serial primary key      not null unique,
