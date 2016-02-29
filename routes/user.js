@@ -14,7 +14,7 @@ router
       "message" : "pong!",
       "time" : date.valueOf(),
       "date" : date,
-      "views" n
+      "views" : n
     }
   })
   .get('/event/:id', function *(){
