@@ -44,18 +44,28 @@ module.exports = {
 
   "authenticateUser" : function* (username, password) {
     var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s'", password, username)
-    var result = yield db.query(queryString)
+    try {
+      var result = yield db.query(queryString)
+      var message = null
+      var status = 200
+    } catch (e) {
+      message = e
+      status = 401
+    }
     if (result.rowCount > 0) {
-      var response = {
-        "success" : result.rows[0].is_match
-      };
-      if (response.success) {
-        response.user_id = result.rows[0].id
+      var success = result.rows[0].is_match
+      if (success) {
+        var userId = result.rows[0].id
       } else {
-        response.user_id = null
-        response.message = "Unable to authenticate with supplied credentials."
+        userId = null
+        message = "Unable to authenticate with supplied credentials."
       }
-      return response;
+      return {
+        "status" : status,
+        "message" : message,
+        "success" : success,
+        "user_id" : userId
+      }
     } else {
       return {
         "sucess" : false,
