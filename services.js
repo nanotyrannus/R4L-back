@@ -138,6 +138,7 @@ module.exports = {
       var status = 200
       var success = true
     } catch (e) {
+      console.log(e)
       message = e
       status = 401
       success = false
