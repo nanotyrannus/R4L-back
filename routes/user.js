@@ -1,8 +1,8 @@
 'use strict';
 
-let router = require('koa-router')()
-let db = require("../shared/db.js")
-let services = require("../services.js")
+let router    = require('koa-router')()
+let db        = require("../shared/db.js")
+let services  = require("../services.js")
 
 
 router

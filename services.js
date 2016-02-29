@@ -1,8 +1,8 @@
 "use strict";
 
-let db = require("./shared/db.js");
-let util = require("util");
-let co = require("co");
+let db    = require("./shared/db.js")
+let util  = require("util")
+let co    = require("co")
 
 module.exports = {
   //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
@@ -73,8 +73,11 @@ module.exports = {
           "name" : "EPSG:4326"
         }
       };
-      let queryString = util.format("INSERT INTO sites (id, pos, geom, properties, event_id) VALUES (%s, %s, ST_GeomFromGeoJSON('%s'), '%s', %s)",
-      feat.id, feat.properties.name,
+      let queryString = util.format(`
+        INSERT INTO sites (id, pos, geom, properties, event_id)
+        VALUES (%s, %s, ST_GeomFromGeoJSON('%s'), '%s', %s)`,
+      feat.id,
+      feat.properties.name,
       JSON.stringify(feat.geometry),
       JSON.stringify(feat.properties),
       eventId);
