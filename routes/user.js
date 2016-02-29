@@ -17,13 +17,7 @@ router
   })
   .get('/event/:id', function *(){
     var ctx = this
-    var body = ctx.request.body
-    try {
-      var result = yield services.getEventPolygons(ctx.params.id)
-    } catch (e) {
-      result.message = e
-      ctx.status = 404
-    }
+    var result = yield services.getEventPolygons(ctx.params.id)
     ctx.body = result;
   })
   .post("/user/create", function* () {
@@ -46,15 +40,7 @@ router
   .post("/user/login", function* () {
     let ctx = this;
     let body = ctx.request.body;
-    try {
-      var result = yield services.authenticateUser(body.user, body.password);
-    } catch (e) {
-      result = {
-        "user_id" : null,
-        "message" : e
-      };
-      ctx.status = 401;
-    }
+    var result = yield services.authenticateUser(body.user, body.password);
     ctx.body = result;
   })
   .post('/event/:eventId/polygon/:polygonId', function* () { //set polygon color
