@@ -64,7 +64,8 @@ module.exports = {
         "status" : status,
         "message" : message,
         "success" : success,
-        "user_id" : userId
+        "user_id" : userId,
+        "username" : username
       }
     } else {
       return {
