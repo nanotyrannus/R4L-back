@@ -106,7 +106,9 @@ module.exports = {
 
   //postgres returns JSONB as \" delimited strings. client must parse.
   "getEventPolygons" : function* (eventId) {
-    let queryString = util.format("SELECT id, ST_AsGeoJSON(geom) AS geometry, properties FROM sites WHERE event_id = %s", eventId);
+    let queryString = util.format(`
+      SELECT id, ST_AsGeoJSON(geom) AS geometry, properties, 'Feature' AS type
+      FROM sites WHERE event_id = %s`, eventId)
     try {
       var result = yield db.query(queryString)
       var status = 200
