@@ -1,17 +1,18 @@
-"use strict";
+"use strict"
 
-let db    = require("./shared/db.js")
-let util  = require("util")
-let co    = require("co")
+var db    = require("./shared/db.js")
+var util  = require("util")
+var co    = require("co")
 
 module.exports = {
   //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
   "getUserPolygons" : function* (username, eventId) {
-    let tableName = util.format("%s_%s_states", username, eventId);
-    let queryString = util.format(`CREATE TABLE IF NOT EXISTS %s (
+    var tableName = util.format("%s_%s_states", username, eventId);
+    var queryString = util.format(`CREATE TABLE IF NOT EXISTS %s (
       date        timestamp         not null,
       status      text              not null references states(status) DEFAULT 'NOT_EVALUATED',
       id          integer           not null unique)`, tableName)
+
     yield db.query(queryString)
 
     queryString = util.format(`
