@@ -3,6 +3,12 @@
 let db    = require("./shared/db.js")
 let util  = require("util")
 let co    = require("co")
+var jwt   = require("koa-jwt")
+var fs    = require("fs")
+
+var home = process.env.HOME
+var publicKey = fs.readFileSync(home + "/.ssh/radar.rsa.pub")
+var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
 
 module.exports = {
   //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
@@ -65,7 +71,8 @@ module.exports = {
         "message" : message,
         "success" : success,
         "user_id" : userId,
-        "username" : username
+        "username" : username,
+        "token" : "token_value"
       }
     } else {
       return {
@@ -209,6 +216,9 @@ module.exports = {
     yield db.query(`CREATE TABLE IF NOT EXISTS users (
       id          serial primary key      not null unique,
       username    text                    not null unique,
+      email       text                    not null unique,
+      first_name  text                    not null,
+      last_name   text                    not null,
       hash        text                    not null,
       salt        text                    not null
     )`)
