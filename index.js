@@ -32,7 +32,7 @@ co.wrap(function* () {
       try {
         yield next
       } catch (e) {
-        console.log(e.name)
+        console.log(e)
         if (e.name === "UnauthorizedError") {
           console.log("Running catch body")
           let body = {}
@@ -50,6 +50,7 @@ co.wrap(function* () {
       "secret" : publicKey,
       "algorithm" : "RS256"
     }))
+   
     app.use(userRoutes.protectedRoutes)
     let port = config.port || process.env.port || 8282
     app.listen(port)

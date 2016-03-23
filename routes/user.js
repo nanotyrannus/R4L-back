@@ -28,8 +28,10 @@ publicRouter
     let ctx = this;
     let salt = yield services.generateSalt();
     let body = ctx.request.body;
-
-    var result = yield services.createUser(body.username, body.password, salt);
+    var result = yield services.createUser(body.username, body.password, body.email, body.first_name, body.last_name, salt);
+    if (result.success) {
+      result.token = jwt.sign({"username" : result.username}, privateKey, {"algorithm" : "RS256"})
+    }
     ctx.body = result;
   })
   .post("/user/login", function* () {

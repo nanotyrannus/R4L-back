@@ -14,10 +14,9 @@ module.exports = {
   //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
   "getUserPolygons" : function* (username, eventId) {
     var tableName = util.format("%s_%s_states", username, eventId);
-    var queryString = util.format(`CREATE TABLE IF NOT EXISTS %s (
-      date        timestamp         not null,
-      status      text              not null references states(status) DEFAULT 'NOT_EVALUATED',
-      id          integer           not null unique)`, tableName)
+    var queryString = util.format(`CREATE TABLE IF NOT EXISTS %s(
+                                 id          integer           not null unique
+                                 ) INHERITS (_%s_states)` , tableName, eventId)
 
     yield db.query(queryString)
 
@@ -85,9 +84,24 @@ module.exports = {
   },
 
   "addEvent" : function* (eventName) {
-    let queryString = util.format("INSERT INTO events (name) VALUES ('%s')", eventName);
-    let result = yield db.query(queryString);
-    return result;
+    var queryString = util.format("INSERT INTO events (name) VALUES ('%s') RETURNING id", eventName);
+    var result
+    try {
+      result = yield db.query(queryString)
+      console.log(result)
+      queryString = util.format(`CREATE TABLE _%s_states(
+                                date        timestamp         not null,
+                                status      text              not null references states(status) DEFAULT 'NOT_EVALUATED',
+                                id          integer           not null unique)`, result.rows[0].id)
+      yield db.query(queryString)
+      result.event_name = eventName
+    } catch (e) {
+      result = {
+        "status" : 401,
+        "message" : e
+      } 
+    }
+    return result
   },
 
   "addPolygons" : function* (featCol, eventId) {
@@ -141,8 +155,10 @@ module.exports = {
     return result.rows;
   },
 
-  "createUser" : function* (username, password, salt) {
-    let queryString = util.format("INSERT INTO users (username, hash, salt) values ('%s', crypt('%s', '%s'), '%s') RETURNING id", username, password, salt, salt);
+  "createUser" : function* (username, password, email, firstName, lastName, salt) {
+    let queryString = util.format(`INSERT INTO users (username, email, first_name, last_name, hash, salt) 
+                                  values ('%s', '%s', '%s', '%s', crypt('%s', '%s'), '%s') 
+                                  RETURNING id`, username, email, firstName, lastName, password, salt, salt);
     try {
       var result = yield db.query(queryString);
       var userId = result.rows[0].id
@@ -159,6 +175,7 @@ module.exports = {
       "status" : status,
       "message" : message,
       "user_id" : userId,
+      "username" : username,
       "success" : success
     };
   },
@@ -166,10 +183,8 @@ module.exports = {
   "setPolygonColor" : function* (username, status, eventId, polygonId) {
     let tableName = util.format("%s_%s_states", username, eventId)
     let queryString = util.format(`CREATE TABLE IF NOT EXISTS %s (
-      date        timestamp               not null,
-      status      text                    not null references states(status),
-      id          integer                 not null unique
-    )`, tableName)
+                                 id          integer           not null unique
+                                 ) INHERITS (_%s_states)`, tableName, eventId)
 
     try {
       yield db.query(queryString)
@@ -201,10 +216,6 @@ module.exports = {
     let queryString = "SELECT gen_salt('md5') AS salt";
     let result = yield db.query(queryString);
     return result.rows[0].salt
-  },
-
-  "confirmSession" : function* () {
-
   },
 
   "init" : function* () { //initialize tables if not exist
