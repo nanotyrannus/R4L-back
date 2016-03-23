@@ -72,7 +72,7 @@ module.exports = {
         "success" : success,
         "user_id" : userId,
         "username" : username,
-        "token" : "token_value"
+        "token" : jwt.sign({"username" : username}, privateKey, {"algorithm" : "RS256"})
       }
     } else {
       return {
@@ -165,18 +165,21 @@ module.exports = {
       var message = null
       var status = 200
       var success = true
+      var token = jwt.sign({"username" : username}, privateKey, {"algorithm" : "RS256"})
     } catch (e) {
       userId = null
       message = e
       status = 401
       success = false
+      token = null 
     }
     return {
       "status" : status,
       "message" : message,
       "user_id" : userId,
       "username" : username,
-      "success" : success
+      "success" : success,
+      "token" : token
     };
   },
 

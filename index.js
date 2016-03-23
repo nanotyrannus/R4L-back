@@ -32,16 +32,17 @@ co.wrap(function* () {
       try {
         yield next
       } catch (e) {
-        console.log(e)
         if (e.name === "UnauthorizedError") {
-          console.log("Running catch body")
           let body = {}
           if (ctx.request.body) body = ctx.request.body
-          body.error = "Unauthorized token"
-          body.status = 403
-          ctx.body = body
+          ctx.body = e
+          ctx.body.status = 403
+        } else {
+          throw e
         }
+        ctx.body.request = ctx.request.body //echo back request
       }
+      console.log(ctx.state.user)
     })
     
     let userRoutes = require('./routes/user')
@@ -50,7 +51,18 @@ co.wrap(function* () {
       "secret" : publicKey,
       "algorithm" : "RS256"
     }))
-   
+    app.use(function* (next) {
+      var ctx = this
+      if (ctx.request.method !== "POST" || ctx.state.user.username === ctx.request.body.username) {
+        yield next
+      } else {
+        throw {
+          "name" : "UnauthorizedError",
+          "message" : "Token assignee mismatch.",
+          "status" : 403
+        }
+      }
+    }) 
     app.use(userRoutes.protectedRoutes)
     let port = config.port || process.env.port || 8282
     app.listen(port)

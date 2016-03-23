@@ -29,18 +29,13 @@ publicRouter
     let salt = yield services.generateSalt();
     let body = ctx.request.body;
     var result = yield services.createUser(body.username, body.password, body.email, body.first_name, body.last_name, salt);
-    if (result.success) {
-      result.token = jwt.sign({"username" : result.username}, privateKey, {"algorithm" : "RS256"})
-    }
     ctx.body = result;
   })
   .post("/user/login", function* () {
     let ctx = this;
+    console.log("Decoded: " + ctx.state.user)
     let body = ctx.request.body;
     var result = yield services.authenticateUser(body.username, body.password);
-    if (result.success) {
-      result.token = jwt.sign({"username" : result.username}, privateKey, {"algorithm" : "RS256"})
-    }
     ctx.body = result;
   })
 
