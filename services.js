@@ -56,7 +56,7 @@ module.exports = {
   },
 
   "authenticateUser" : function* (username, password) {
-    var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s'", password, username)
+    var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s' OR email='%s'", password, username, username)
     try {
       var result = yield db.query(queryString)
       var message = null
