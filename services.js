@@ -59,6 +59,8 @@ module.exports = {
     var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s' OR email='%s'", password, username, username)
     try {
       var result = yield db.query(queryString)
+      queryString = util.format(`select count(*) > 0 as is_admin from admins where username='%s'`, username)
+      var isAdmin = yield db.query(queryString)
       var message = null
       var status = 200
     } catch (e) {
@@ -79,7 +81,8 @@ module.exports = {
         "success" : success,
         "user_id" : userId,
         "username" : username,
-        "token" : jwt.sign({"username" : username}, privateKey, {"algorithm" : "RS256"})
+        "token" : jwt.sign({"username" : username}, privateKey, {"algorithm" : "RS256"}),
+        "is_admin" : isAdmin.rows[0].is_admin
       }
     } else {
       return {
@@ -242,27 +245,31 @@ module.exports = {
     yield db.query(`INSERT INTO states VALUES ('DAMAGE'),('NO_DAMAGE'),('UNSURE'),('NOT_EVALUATED') ON CONFLICT DO NOTHING`)
 
     yield db.query(`CREATE TABLE IF NOT EXISTS users (
-      id          serial primary key      not null unique,
-      username    text                    not null unique,
-      email       text                    not null unique,
-      first_name  text                    not null,
-      last_name   text                    not null,
-      hash        text                    not null,
-      salt        text                    not null
+      id            serial primary key            not null unique,
+      username      text                          not null unique,
+      email         text                          not null unique,
+      first_name    text                          not null,
+      last_name     text                          not null,
+      hash          text                          not null,
+      salt          text                          not null
+    )`)
+
+    yield db.query(`CREATE TABLE IF NOT EXISTS admins (
+      username      text                          references users(username)
     )`)
 
     yield db.query(`CREATE TABLE IF NOT EXISTS events (
-      id          serial                  not null unique,
-      name        text                    not null unique
+      id            serial                        not null unique,
+      name          text                          not null unique
     )`)
 
     yield db.query(`CREATE TABLE IF NOT EXISTS sites (
-      id            integer                 not null,
-      pos           integer                 not null,
+      id            integer                       not null,
+      pos           integer                       not null,
       geom_poly     geometry(Polygon, 4326),
       geom_multi    geometry(MultiPolygon, 4326),
       properties    JSONB,
-      event_id      integer                 references events(id)
+      event_id      integer                       references events(id)
     )`)
 
     yield db.query(`INSERT INTO events VALUES (100, 'Test') ON CONFLICT DO NOTHING`)
