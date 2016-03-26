@@ -106,6 +106,12 @@ module.exports = {
 
   "addPolygons" : function* (featCol, eventId) {
     //yielding an array of promises does not guarantee sequential evaluation
+    //check if feature-collection is of polygons or multi-polygons
+    if (featCol.features[0] && featCol.features[0].geometry.type == "MultiPolygon") {
+        var result = yield featCol.features.map(function (feat) {
+            let queryString = util.format(``)
+        })   
+    }
     var result = yield featCol.features.map(function (feat) {
       feat.geometry["crs"] = {
         "type" : "name",
@@ -244,11 +250,12 @@ module.exports = {
     )`)
 
     yield db.query(`CREATE TABLE IF NOT EXISTS sites (
-      id          integer                 not null unique,
-      pos         integer                 not null unique,
-      geom        geometry(Polygon, 4326) not null,
-      properties  JSONB,
-      event_id    integer                 references events(id)
+      id            integer                 not null unique,
+      pos           integer                 not null unique,
+      geom_poly     geometry(Polygon, 4326),
+      geom_multi    geometry(MultiPolygon, 4326),
+      properties    JSONB,
+      event_id      integer                 references events(id)
     )`)
 
     yield db.query(`INSERT INTO events VALUES (100, 'Test') ON CONFLICT DO NOTHING`)
