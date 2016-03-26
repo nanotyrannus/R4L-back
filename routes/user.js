@@ -40,17 +40,22 @@ publicRouter
   })
 
 protectedRouter
-  .get('/event/:id', function *(){
+  .get('/event/:id', function* () {
     var ctx = this
     var result = yield services.getEventPolygons(ctx.params.id)
-    ctx.body = result;
+    ctx.body = result
+  })
+  .get('/event/:id/polygon', function* () {
+    var ctx = this
+    var result = yield services.getEventTotals(ctx.params.id)
+    ctx.body = result
   })
   .post('/event/:eventId/polygon/:polygonId', function* () { //set polygon color
-    let ctx = this;
-    let body = ctx.request.body;
-    let params = ctx.params;
+    let ctx = this
+    let body = ctx.request.body
+    let params = ctx.params
     let result = yield services.setPolygonColor(body.username, body.status, params.eventId, params.polygonId);
-    ctx.body = result;
+    ctx.body = result
     // let queryString = 'INSERT INTO POLYGON (id,coordinates) VALUES (' + body.id + ',\'' + body.coordinates + '\')';
     // let result = yield db.query(queryString)
   })

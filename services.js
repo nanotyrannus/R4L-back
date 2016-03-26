@@ -11,6 +11,13 @@ var publicKey = fs.readFileSync(home + "/.ssh/radar.rsa.pub")
 var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
 
 module.exports = {
+  "getEventTotals" : function* (eventId) {
+    var queryString = util.format(`select id, status, count(status)
+                                  from _%s_states 
+                                  group by id, status;`, eventId)
+    var result = yield db.query(queryString)
+    return result
+  },
   //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
   "getUserPolygons" : function* (username, eventId) {
     var tableName = util.format("%s_%s_states", username, eventId);
@@ -49,7 +56,7 @@ module.exports = {
   },
 
   "authenticateUser" : function* (username, password) {
-    var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s'", password, username)
+    var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s' OR email='%s'", password, username, username)
     try {
       var result = yield db.query(queryString)
       var message = null
