@@ -56,6 +56,7 @@ co.wrap(function* () {
       if (ctx.request.method !== "POST" || ctx.state.user.username === ctx.request.body.username) {
         yield next
       } else {
+        console.log(ctx.state.user.username, "\n", ctx.request.body.username)
         throw {
           "name" : "UnauthorizedError",
           "message" : "Token assignee mismatch.",

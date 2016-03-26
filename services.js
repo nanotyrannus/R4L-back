@@ -114,10 +114,9 @@ module.exports = {
   "addPolygons" : function* (featCol, eventId) {
     //yielding an array of promises does not guarantee sequential evaluation
     //check if feature-collection is of polygons or multi-polygons
+    var isMulti = false
     if (featCol.features[0] && featCol.features[0].geometry.type == "MultiPolygon") {
-        var result = yield featCol.features.map(function (feat) {
-            let queryString = util.format(``)
-        })   
+      isMulti = true
     }
     var result = yield featCol.features.map(function (feat) {
       feat.geometry["crs"] = {
@@ -127,8 +126,9 @@ module.exports = {
         }
       };
       let queryString = util.format(`
-        INSERT INTO sites (id, pos, geom, properties, event_id)
+        INSERT INTO sites (id, pos, %s, properties, event_id)
         VALUES (%s, %s, ST_GeomFromGeoJSON('%s'), '%s', %s)`,
+      (isMulti) ? "geom_multi" : "geom_poly",
       feat.id,
       feat.properties.name,
       JSON.stringify(feat.geometry),
@@ -257,8 +257,8 @@ module.exports = {
     )`)
 
     yield db.query(`CREATE TABLE IF NOT EXISTS sites (
-      id            integer                 not null unique,
-      pos           integer                 not null unique,
+      id            integer                 not null,
+      pos           integer                 not null,
       geom_poly     geometry(Polygon, 4326),
       geom_multi    geometry(MultiPolygon, 4326),
       properties    JSONB,
