@@ -104,14 +104,19 @@ module.exports = {
                                 status      text              not null references states(status) DEFAULT 'NOT_EVALUATED',
                                 id          integer           not null unique)`, result.rows[0].id)
       yield db.query(queryString)
-      result.event_name = eventName
     } catch (e) {
-      result = {
+      return {
         "status" : 401,
-        "message" : e
+        "success" : false,
+        "message" : e,
       } 
     }
-    return result
+    return {
+      "status" : 200,
+      "success" : true,
+      "event_id" : result.rows[0].id,
+      "event_name" : eventName
+    }
   },
 
   "addPolygons" : function* (featCol, eventId) {
@@ -146,7 +151,7 @@ module.exports = {
   //postgres returns JSONB as \" delimited strings. client must parse.
   "getEventPolygons" : function* (eventId) {
     let queryString = util.format(`
-      SELECT id, ST_AsGeoJSON(geom) AS geometry, properties, 'Feature' AS type
+      SELECT id, ST_AsGeoJSON(geom_poly) AS geometry, ST_AsGeoJSON(geom_multi) AS geometry_multi, properties, 'Feature' AS type
       FROM sites WHERE event_id = %s`, eventId)
     try {
       var result = yield db.query(queryString)

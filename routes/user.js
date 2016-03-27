@@ -40,12 +40,19 @@ publicRouter
   })
 
 protectedRouter
+  .get("/ping_", function* (){ //protected ping
+    this.body = {
+      "status" : 200,
+      "message" : "pong_!",
+      "date" : new Date()
+    }
+  })
   .get('/event/:id', function* () {
     var ctx = this
     var result = yield services.getEventPolygons(ctx.params.id)
     ctx.body = result
   })
-  .get('/event/:id/polygon', function* () {
+  .get('/event/:id/data', function* () {
     var ctx = this
     var result = yield services.getEventTotals(ctx.params.id)
     ctx.body = result
@@ -60,9 +67,13 @@ protectedRouter
     // let result = yield db.query(queryString)
   })
   .post("/event", function* () {
-    let ctx = this;
-    let body = ctx.request.body;
-    let result = yield services.addEvent(body.eventName);
+    let ctx = this
+    let body = ctx.request.body
+    let result = yield services.addEvent(body.eventName)
+
+    if (result.success && body.featureCollection) {
+      result.result = yield services.addPolygons(body.featureCollection, result.event_id)
+    }
     ctx.body = result;
   })
   .post("/event/:id", function* () {

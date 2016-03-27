@@ -18,7 +18,11 @@ var publicKey = fs.readFileSync(home + "/.ssh/radar.rsa.pub")
 var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
 
 
-app.use(cors())
+app.use(cors({
+  "credentials" : true,
+  "methods" : ["GET", "POST"],
+  "headers" : ["Content-Type","Authorization"]
+}))
 app.use(bodyParser({
   "jsonLimit" : "5mb"
 }))

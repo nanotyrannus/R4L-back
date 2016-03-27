@@ -6,19 +6,33 @@ let config = require("../config.json");
 
 module.exports = {
   "query" : function* (queryString) {
+    var timestamp, connectionResults, client, done, result
+    
     if (config.debug) {
-      var timestamp = new Date();
-      console.log("db.query called: ", queryString, "\nTime:", timestamp);
+      timestamp = new Date()
+      console.log("db.query called: ", queryString, "\nTime:", timestamp)
     }
-    let connectionResults = yield pg.connectPromise(config.aws)
-    let client = connectionResults[0]
-    let done = connectionResults[1]
-
-    let result = yield client.queryPromise(queryString);
+    
+    connectionResults = yield pg.connectPromise(config.aws)
+    client = connectionResults[0]
+    done = connectionResults[1]
+    
+    try {
+      result = yield client.queryPromise(queryString);
+    } catch (e) {
+      throw {
+        "name" : "QueryError",
+        "code" : e.code,
+        "detail" : e.detail
+      }
+    }
+    
     done();
+    
     if (config.debug) {
       console.log("Done: " + timestamp)
     }
+    
     return result
   }
 }
