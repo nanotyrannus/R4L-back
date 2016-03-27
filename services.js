@@ -118,7 +118,19 @@ module.exports = {
       "event_name" : eventName
     }
   },
-
+  "deleteEvent" : function* (eventId) {
+    var queryString = util.format(`DELETE FROM events WHERE id=%s`, eventId)
+    try {
+      var result = yield db.query(queryString)
+    } catch (e) {
+      return {
+        "status" : 401,
+        "success" : false,
+        "message" : e
+      }
+    }
+    return result
+  },
   "addPolygons" : function* (featCol, eventId) {
     //yielding an array of promises does not guarantee sequential evaluation
     //check if feature-collection is of polygons or multi-polygons

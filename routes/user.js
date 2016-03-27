@@ -76,6 +76,12 @@ protectedRouter
     }
     ctx.body = result;
   })
+  .delete("/event", function* () {
+    var ctx = this
+    var body = ctx.request.body
+    var result = yield services.deleteEvent(body.eventId)
+    ctx.body = result
+  })
   .post("/event/:id", function* () {
     let ctx = this;
     let body = ctx.request.body;
