@@ -14,7 +14,7 @@ module.exports = {
   "getEventTotals" : function* (eventId) {
     var queryString = util.format(`select id, status, count(status)
                                   from _%s_states 
-                                  group by id, status;`, eventId)
+                                  group by id, status`, eventId)
     var result = yield db.query(queryString)
     return result
   },
