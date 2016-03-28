@@ -28,7 +28,7 @@ module.exports = {
     yield db.query(queryString)
 
     queryString = util.format(`
-      SELECT a.id, ST_AsGeoJSON(geom) AS geometry, (properties || jsonb_build_object('status',
+      SELECT a.id, ST_AsGeoJSON(geom_poly) AS geometry, ST_AsGeoJSON(geom_multi) AS geometry_multi, (properties || jsonb_build_object('status',
           (
             SELECT
             CASE WHEN b.status IS NULL THEN 'NOT_EVALUATED'
@@ -129,7 +129,10 @@ module.exports = {
         "message" : e
       }
     }
-    return result
+    return {
+      "status" : 200,
+      "success" : (result.rowCount > 0) ? true : false
+    }
   },
   "addPolygons" : function* (featCol, eventId) {
     //yielding an array of promises does not guarantee sequential evaluation

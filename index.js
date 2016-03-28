@@ -20,7 +20,7 @@ var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
 
 app.use(cors({
   "credentials" : true,
-  "methods" : ["GET", "POST"],
+  "methods" : ["GET", "POST", "DELETE"],
   "headers" : ["Content-Type","Authorization"]
 }))
 app.use(bodyParser({

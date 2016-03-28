@@ -4,6 +4,12 @@ let postgres = require('pg');
 let pg       = require('co-pg')(postgres);
 let config = require("../config.json");
 
+var QueryError = function (errorCode, detail) {
+  this.name = "QueryError"
+  this.message = detail || "Error processing database query"
+  this.stack = (new Error()).stack
+}
+
 module.exports = {
   "query" : function* (queryString) {
     var timestamp, connectionResults, client, done, result
@@ -20,11 +26,7 @@ module.exports = {
     try {
       result = yield client.queryPromise(queryString);
     } catch (e) {
-      throw {
-        "name" : "QueryError",
-        "code" : e.code,
-        "detail" : e.detail
-      }
+      throw new QueryError(e.code, e.detail)
     }
     
     done();
