@@ -54,7 +54,9 @@ module.exports = {
       "type" : "FeatureCollection"
     };
   },
-
+  "getUserPolygonsInArea" : function* () {
+  
+  },
   "authenticateUser" : function* (username, password) {
     var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s' OR email='%s'", password, username, username)
     try {

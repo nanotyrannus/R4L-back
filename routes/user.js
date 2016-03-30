@@ -24,6 +24,16 @@ publicRouter
       "date" : date
     }
   })
+  .post("/ping", function* () {
+    var ctx = this
+    var date = new Date()
+    ctx.body = {
+      "message" : "pong!",
+      "time" : date.valueOf(),
+      "date" : date,
+      "request" : ctx.request.body
+    }
+  })
   .post("/user/create", function* () {
     let ctx = this;
     let salt = yield services.generateSalt();
