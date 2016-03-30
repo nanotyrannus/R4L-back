@@ -79,8 +79,8 @@ protectedRouter
   .post("/event", function* () {
     let ctx = this
     let body = ctx.request.body
-    let result = yield services.addEvent(body.eventName)
-
+    let result = yield services.addEvent(body.eventName, body.description || "", body.imageUrl || "")
+    
     if (result.success && body.featureCollection) {
       result.result = yield services.addPolygons(body.featureCollection, result.event_id)
     }

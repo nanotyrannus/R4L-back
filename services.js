@@ -19,6 +19,10 @@ module.exports = {
     return result
   },
   //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
+  
+  /**
+   *  Get polygons of specific user along with status
+   */
   "getUserPolygons" : function* (username, eventId) {
     var tableName = util.format("%s_%s_states", username, eventId);
     var queryString = util.format(`CREATE TABLE IF NOT EXISTS %s(
@@ -54,8 +58,13 @@ module.exports = {
       "type" : "FeatureCollection"
     };
   },
-  "getUserPolygonsInArea" : function* () {
   
+  /**
+   * Get user polygons in bounded area
+   */
+
+  "getUserPolygonsInArea" : function* (eventId, lat, lng) {
+      
   },
   "authenticateUser" : function* (username, password) {
     var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s' OR email='%s'", password, username, username)
@@ -95,8 +104,8 @@ module.exports = {
     }
   },
 
-  "addEvent" : function* (eventName) {
-    var queryString = util.format("INSERT INTO events (name) VALUES ('%s') RETURNING id", eventName);
+  "addEvent" : function* (eventName, description, imageUrl) {
+    var queryString = util.format("INSERT INTO events (name, description, thumbnail) VALUES ('%s', '%s', '%s') RETURNING id", eventName, description, imageUrl);
     var result
     try {
       result = yield db.query(queryString)
@@ -106,6 +115,10 @@ module.exports = {
                                 status      text              not null references states(status) DEFAULT 'NOT_EVALUATED',
                                 id          integer           not null unique)`, result.rows[0].id)
       yield db.query(queryString)
+      
+      queryString = util.format(`CREATE TABLE _%s_sites() INHERITS (sites)`, result.rows[0].id)
+      yield db.query(queryString)
+
     } catch (e) {
       return {
         "status" : 401,
@@ -151,8 +164,9 @@ module.exports = {
         }
       };
       let queryString = util.format(`
-        INSERT INTO sites (id, pos, %s, properties, event_id)
+        INSERT INTO _%s_sites (id, pos, %s, properties, event_id)
         VALUES (%s, %s, ST_GeomFromGeoJSON('%s'), '%s', %s)`,
+      eventId,
       (isMulti) ? "geom_multi" : "geom_poly",
       feat.id,
       feat.properties.name,
@@ -161,6 +175,9 @@ module.exports = {
       eventId);
       return db.query(queryString.replace(/\n/,""));
     });
+
+    let queryString = util.format(`UPDATE events SET site_count=%s WHERE id=%s`, featCol.features.length, eventId)
+    yield db.query(queryString)
 
     return result;
   },
