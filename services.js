@@ -220,7 +220,7 @@ module.exports = {
   },
 
   "getEvents" : function* () {
-    let queryString = "SELECT id, name, description, thumbnail, creation_date, ST_AsGeoJSON(centroid) AS centroid FROM events";
+    let queryString = "SELECT id, site_count, name, description, thumbnail, creation_date, ST_AsGeoJSON(centroid) AS centroid FROM events";
     let result = yield db.query(queryString);
     return result.rows;
   },
@@ -314,7 +314,11 @@ module.exports = {
 
     yield db.query(`CREATE TABLE IF NOT EXISTS events (
       id            serial                        not null unique,
-      name          text                          not null unique
+      name          text                          not null unique,
+      description   text,
+      thumbnail     text,
+      creation_date date,
+      centroid      geometry(Point, 4326)
     )`)
 
     yield db.query(`CREATE TABLE IF NOT EXISTS sites (
