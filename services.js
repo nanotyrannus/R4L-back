@@ -105,7 +105,9 @@ module.exports = {
   },
 
   "addEvent" : function* (eventName, description, imageUrl) {
-    var queryString = util.format("INSERT INTO events (name, description, thumbnail) VALUES ('%s', '%s', '%s') RETURNING id", eventName, description, imageUrl);
+    var queryString = util.format(`INSERT INTO events (name, description, thumbnail) 
+                                   VALUES ('%s', '%s', '%s') 
+                                   RETURNING id`, eventName, description, imageUrl);
     var result
     try {
       result = yield db.query(queryString)
@@ -179,6 +181,19 @@ module.exports = {
     let queryString = util.format(`UPDATE events SET site_count=%s WHERE id=%s`, featCol.features.length, eventId)
     yield db.query(queryString)
 
+    queryString = util.format(`SELECT ST_AsGeoJSON(ST_Centroid(ST_Union(geom_poly))) AS geometry
+                               FROM sites 
+                               WHERE event_id=%s`, eventId)
+    var centroidResult = yield db.query(queryString)
+    
+    centroidResult.rows[0].foo = "bar"
+    console.log(centroidResult.rows[0])
+
+
+    /* queryString = util.format(`UPDATE sites
+                              SET centroid=ST_GeomFromGeoJSON('%s')
+                              WHERE event_id=%s`, JSON.stringify(centroid), eventId)
+   */ yield db.query(queryString)
     return result;
   },
 
@@ -308,7 +323,8 @@ module.exports = {
       geom_poly     geometry(Polygon, 4326),
       geom_multi    geometry(MultiPolygon, 4326),
       properties    JSONB,
-      event_id      integer                       references events(id)
+      event_id      integer                       references events(id),
+      centroid      geometry(Point, 4326)
     )`)
 
     yield db.query(`INSERT INTO events VALUES (100, 'Test') ON CONFLICT DO NOTHING`)

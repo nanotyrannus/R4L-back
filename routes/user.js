@@ -63,50 +63,58 @@ protectedRouter
     ctx.body = result
   })
   .get('/event/:id/data', function* () {
-    var ctx = this
-    var result = yield services.getEventTotals(ctx.params.id)
-    ctx.body = result
+    var ctx     = this
+    var result  = yield services.getEventTotals(ctx.params.id)
+    ctx.body    = result
   })
   .post('/event/:eventId/polygon/:polygonId', function* () { //set polygon color
-    let ctx = this
-    let body = ctx.request.body
-    let params = ctx.params
-    let result = yield services.setPolygonColor(body.username, body.status, params.eventId, params.polygonId);
-    ctx.body = result
+    let ctx     = this
+    let body    = ctx.request.body
+    let params  = ctx.params
+    let result  = yield services.setPolygonColor(body.username, body.status, params.eventId, params.polygonId);
+    ctx.body    = result
     // let queryString = 'INSERT INTO POLYGON (id,coordinates) VALUES (' + body.id + ',\'' + body.coordinates + '\')';
     // let result = yield db.query(queryString)
   })
   .post("/event", function* () {
-    let ctx = this
-    let body = ctx.request.body
-    let result = yield services.addEvent(body.eventName, body.description || "", body.imageUrl || "")
+    let ctx     = this
+    let body    = ctx.request.body
+    let result  = yield services.addEvent(body.eventName, body.description || "", body.imageUrl || "")
     
     if (result.success && body.featureCollection) {
       result.result = yield services.addPolygons(body.featureCollection, result.event_id)
     }
-    ctx.body = result;
+    ctx.body    = result;
   })
   .delete("/event", function* () {
-    var ctx = this
-    var body = ctx.request.body
-    var result = yield services.deleteEvent(body.eventId)
-    ctx.body = result
+    var ctx     = this
+    var body    = ctx.request.body
+    var result  = yield services.deleteEvent(body.eventId)
+    ctx.body    = result
   })
   .post("/event/:id", function* () {
-    let ctx = this;
-    let body = ctx.request.body;
-    let result = yield services.addPolygons(body.featureCollection, ctx.params.id);
-    ctx.body = result;
+    var ctx     = this;
+    var body    = ctx.request.body;
+    var result  = yield services.addPolygons(body.featureCollection, ctx.params.id);
+    ctx.body    = result;
   })
   .get("/event", function* () {
-    var ctx = this;
-    var result = yield services.getEvents();
-    ctx.body = result;
+    var ctx     = this
+    var result  = yield services.getEvents()
+    ctx.body    = result
   })
   .get("/user/:username/event/:id", function* () {
-    let ctx = this;
-    let result = yield services.getUserPolygons(ctx.params.username, ctx.params.id);
-    ctx.body = result;
+    var ctx     = this
+    var result  = yield services.getUserPolygons(ctx.params.username, ctx.params.id)
+    ctx.body    = result
+  })
+  .post("/user/:username/event/:id", function* () {
+    var ctx     = this
+    var body    = ctx.request.body
+    var result  = yield services.getUserPolygons(ctx.params.username, ctx.params.id, body.min_lng, body.max_lng, body.min_lat, body.max_lat)
+    //var result  = yield services.getUserPolygonsInArea(ctx.params.username, ctx.params.id, bounds.min_lng, bounds.max_lng, bounds.min_lat, bounds.max_lat)
+    console.log(ctx.request.body)
+    ctx.body    = "hello test"
   })
 
 
