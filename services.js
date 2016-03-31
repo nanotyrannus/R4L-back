@@ -192,7 +192,7 @@ module.exports = {
 
     queryString = util.format(`UPDATE events
                               SET centroid=ST_GeomFromText('POINT(%s %s)', 4326)
-                              WHERE id=%s`, 0, 0, eventId)
+                              WHERE id=%s`, centroid.coordinates[1], centroid.coordinates[0], eventId)
     yield db.query(queryString)
     return result;
   },
