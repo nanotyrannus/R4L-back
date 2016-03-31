@@ -327,8 +327,7 @@ module.exports = {
       geom_poly     geometry(Polygon, 4326),
       geom_multi    geometry(MultiPolygon, 4326),
       properties    JSONB,
-      event_id      integer                       references events(id),
-      centroid      geometry(Point, 4326)
+      event_id      integer                       references events(id)
     )`)
 
     yield db.query(`INSERT INTO events VALUES (100, 'Test') ON CONFLICT DO NOTHING`)
