@@ -40,8 +40,8 @@ module.exports = {
             END
           )
       )) AS properties, 'Feature' AS type
-      FROM sites AS a
-      FULL OUTER JOIN %s AS b ON a.id=b.id`, tableName);
+      FROM _%s_sites AS a
+      FULL OUTER JOIN %s AS b ON a.id=b.id`, eventId, tableName);
     try {
       var result = yield db.query(queryString);
       var status = 200
@@ -105,8 +105,8 @@ module.exports = {
   },
 
   "addEvent" : function* (eventName, description, imageUrl) {
-    var queryString = util.format(`INSERT INTO events (name, description, thumbnail) 
-                                   VALUES ('%s', '%s', '%s') 
+    var queryString = util.format(`INSERT INTO events (name, description, thumbnail, creation_date) 
+                                   VALUES ('%s', '%s', '%s', NOW()) 
                                    RETURNING id`, eventName, description, imageUrl);
     var result
     try {
@@ -185,15 +185,15 @@ module.exports = {
                                FROM sites 
                                WHERE event_id=%s`, eventId)
     var centroidResult = yield db.query(queryString)
-    
-    centroidResult.rows[0].foo = "bar"
-    console.log(centroidResult.rows[0])
+    var centroid = JSON.parse(centroidResult.rows[0].geometry) 
+//    centroidResult.rows[0].geometry.crs = {"type":"name","properties":{"name":"EPSG:4326"}}
+    console.log(centroid.coordinates)
 
 
-    /* queryString = util.format(`UPDATE sites
-                              SET centroid=ST_GeomFromGeoJSON('%s')
-                              WHERE event_id=%s`, JSON.stringify(centroid), eventId)
-   */ yield db.query(queryString)
+    queryString = util.format(`UPDATE events
+                              SET centroid=ST_GeomFromText('POINT(%s %s)', 4326)
+                              WHERE id=%s`, 0, 0, eventId)
+    yield db.query(queryString)
     return result;
   },
 
@@ -220,7 +220,7 @@ module.exports = {
   },
 
   "getEvents" : function* () {
-    let queryString = "SELECT * FROM events";
+    let queryString = "SELECT id, name, description, thumbnail, creation_date, ST_AsGeoJSON(centroid) AS centroid FROM events";
     let result = yield db.query(queryString);
     return result.rows;
   },

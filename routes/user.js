@@ -114,7 +114,7 @@ protectedRouter
     var result  = yield services.getUserPolygons(ctx.params.username, ctx.params.id, body.min_lng, body.max_lng, body.min_lat, body.max_lat)
     //var result  = yield services.getUserPolygonsInArea(ctx.params.username, ctx.params.id, bounds.min_lng, bounds.max_lng, bounds.min_lat, bounds.max_lat)
     console.log(ctx.request.body)
-    ctx.body    = "hello test"
+    ctx.body    = result
   })
 
 
