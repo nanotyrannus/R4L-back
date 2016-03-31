@@ -318,7 +318,8 @@ module.exports = {
       description   text,
       thumbnail     text,
       creation_date date,
-      centroid      geometry(Point, 4326)
+      centroid      geometry(Point, 4326),
+      site_count    integer
     )`)
 
     yield db.query(`CREATE TABLE IF NOT EXISTS sites (
