@@ -16,6 +16,10 @@ module.exports = {
                                   from _%s_states 
                                   group by id, status`, eventId)
     var result = yield db.query(queryString)
+
+    var totals = {}
+
+
     return result
   },
   //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
@@ -26,8 +30,8 @@ module.exports = {
   "getUserPolygons" : function* (username, eventId) {
     var tableName = util.format("%s_%s_states", username, eventId);
     var queryString = util.format(`CREATE TABLE IF NOT EXISTS %s(
-                                 id          integer           not null unique
-                                 ) INHERITS (_%s_states)` , tableName, eventId)
+                                   id          integer           not null unique
+                                   ) INHERITS (_%s_states)` , tableName, eventId)
 
     yield db.query(queryString)
 
@@ -178,9 +182,6 @@ module.exports = {
       return db.query(queryString.replace(/\n/,""));
     });
 
-    let queryString = util.format(`UPDATE events SET site_count=%s WHERE id=%s`, featCol.features.length, eventId)
-    yield db.query(queryString)
-
     queryString = util.format(`SELECT ST_AsGeoJSON(ST_Centroid(ST_Union(geom_poly))) AS geometry
                                FROM sites 
                                WHERE event_id=%s`, eventId)
@@ -189,11 +190,16 @@ module.exports = {
 //    centroidResult.rows[0].geometry.crs = {"type":"name","properties":{"name":"EPSG:4326"}}
     console.log(centroid.coordinates)
 
-
     queryString = util.format(`UPDATE events
                               SET centroid=ST_GeomFromText('POINT(%s %s)', 4326)
                               WHERE id=%s`, centroid.coordinates[1], centroid.coordinates[0], eventId)
     yield db.query(queryString)
+
+    var thumbnail = "https://maps.googleapis.com/maps/api/staticmap?center=" + centroid.coordinates[1] + "," + centroid.coordinates[0] + "&zoom=7&size=500x500&key=AIzaSyBVZTV9TU1NpITTB1ar5awvfr1BR1OKvlA" 
+
+    let queryString = util.format(`UPDATE events SET site_count=%s, thumbnail='%s' WHERE id=%s`, featCol.features.length, thumbnail, eventId)
+    yield db.query(queryString)
+
     return result;
   },
 
