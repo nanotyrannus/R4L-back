@@ -55,6 +55,15 @@ module.exports = {
       message = e
     }
 
+    /**
+     * Calculate optimal starting point for this user
+     */
+
+    queryString = util.format(`SELECT ST_AsGeoJSON( ST_Centroid( geom_poly  ) ), ST_AsGeoJSON( ST_Centroid(geom_multi  ) ) WHERE id=1`)
+
+    result = yield db.query(queryString()
+    console.log(result)
+
     return {
       "status" : status,
       "message" : message,
