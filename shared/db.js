@@ -26,6 +26,7 @@ module.exports = {
     try {
       result = yield client.queryPromise(queryString);
     } catch (e) {
+      console.error(e)
       throw new QueryError(e.code, e.detail)
     }
     

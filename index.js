@@ -24,7 +24,7 @@ app.use(cors({
   "headers" : ["Content-Type","Authorization"]
 }))
 app.use(bodyParser({
-  "jsonLimit" : "5mb"
+  "jsonLimit" : "25mb"
 }))
 
 co.wrap(function* () {
