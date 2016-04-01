@@ -182,7 +182,7 @@ module.exports = {
       return db.query(queryString.replace(/\n/,""));
     });
 
-    queryString = util.format(`SELECT ST_AsGeoJSON(ST_Centroid(ST_Union(geom_poly))) AS geometry
+    var queryString = util.format(`SELECT ST_AsGeoJSON(ST_Centroid(ST_Union(geom_poly))) AS geometry
                                FROM sites 
                                WHERE event_id=%s`, eventId)
     var centroidResult = yield db.query(queryString)
