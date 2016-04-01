@@ -184,7 +184,7 @@ module.exports = {
 
     var queryString = util.format(`SELECT ST_AsGeoJSON(ST_Centroid(ST_Union(%s))) AS geometry
                                FROM sites 
-                               WHERE event_id=%s`, (isMulti) ? "geom_mutli" : "geom_poly",eventId)
+                               WHERE event_id=%s`, (isMulti) ? "geom_multi" : "geom_poly",eventId)
     var centroidResult = yield db.query(queryString)
     var centroid = JSON.parse(centroidResult.rows[0].geometry) 
 //    centroidResult.rows[0].geometry.crs = {"type":"name","properties":{"name":"EPSG:4326"}}
