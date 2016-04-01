@@ -182,9 +182,9 @@ module.exports = {
       return db.query(queryString.replace(/\n/,""));
     });
 
-    var queryString = util.format(`SELECT ST_AsGeoJSON(ST_Centroid(ST_Union(geom_poly))) AS geometry
+    var queryString = util.format(`SELECT ST_AsGeoJSON(ST_Centroid(ST_Union(%s))) AS geometry
                                FROM sites 
-                               WHERE event_id=%s`, eventId)
+                               WHERE event_id=%s`, (isMulti) ? "geom_mutli" : "geom_poly",eventId)
     var centroidResult = yield db.query(queryString)
     var centroid = JSON.parse(centroidResult.rows[0].geometry) 
 //    centroidResult.rows[0].geometry.crs = {"type":"name","properties":{"name":"EPSG:4326"}}
