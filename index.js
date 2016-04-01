@@ -21,7 +21,7 @@ var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
 app.use(cors({
   "credentials" : true,
   "methods" : ["GET", "POST", "DELETE"],
-  "headers" : ["Content-Type","Authorization"]
+  "headers" : ["Content-Type","Authorization", "x-username"]
 }))
 app.use(bodyParser({
   "jsonLimit" : "25mb"
@@ -57,7 +57,7 @@ co.wrap(function* () {
     }))
     app.use(function* (next) {
       var ctx = this
-      if (ctx.request.method !== "POST" || ctx.state.user.username === ctx.request.body.username) {
+      if (ctx.request.method !== "POST" || ctx.state.user.username === ctx.get("x-username")) { 
         yield next
       } else {
         console.log(ctx.state.user.username, "\n", ctx.request.body.username)
