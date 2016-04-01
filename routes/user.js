@@ -86,10 +86,10 @@ protectedRouter
     }
     ctx.body    = result;
   })
-  .delete("/event", function* () {
+  .delete("/event/:id", function* () {
     var ctx     = this
     var body    = ctx.request.body
-    var result  = yield services.deleteEvent(body.eventId)
+    var result  = yield services.deleteEvent(ctx.params.id)
     ctx.body    = result
   })
   .post("/event/:id", function* () {

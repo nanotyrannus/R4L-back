@@ -197,7 +197,7 @@ module.exports = {
 
     var thumbnail = "https://maps.googleapis.com/maps/api/staticmap?center=" + centroid.coordinates[1] + "," + centroid.coordinates[0] + "&zoom=7&size=500x500&key=AIzaSyBVZTV9TU1NpITTB1ar5awvfr1BR1OKvlA" 
 
-    let queryString = util.format(`UPDATE events SET site_count=%s, thumbnail='%s' WHERE id=%s`, featCol.features.length, thumbnail, eventId)
+    queryString = util.format(`UPDATE events SET site_count=%s, thumbnail='%s' WHERE id=%s`, featCol.features.length, thumbnail, eventId)
     yield db.query(queryString)
 
     return result;
