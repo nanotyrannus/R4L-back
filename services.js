@@ -13,17 +13,210 @@ var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
 module.exports = {
   "getEventTotals" : function* (eventId) {
     var queryString = util.format(`select id, status, count(status)
-                                  from _%s_states 
+                                  from _%s_states
                                   group by id, status`, eventId)
     var result = yield db.query(queryString)
 
-    var totals = {}
+    var unprocessed = [
+    {
+      "id": 5,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 6,
+      "status": "NO_DAMAGE",
+      "count": "1"
+    },
+    {
+      "id": 1,
+      "status": "DAMAGE",
+      "count": "1"
+    },
+    {
+      "id": 18,
+      "status": "NO_DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 12,
+      "status": "NO_DAMAGE",
+      "count": "1"
+    },
+    {
+      "id": 13,
+      "status": "DAMAGE",
+      "count": "4"
+    },
+    {
+      "id": 15,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 0,
+      "status": "NO_DAMAGE",
+      "count": "1"
+    },
+    {
+      "id": 4,
+      "status": "DAMAGE",
+      "count": "3"
+    },
+    {
+      "id": 8,
+      "status": "NOT_EVALUATED",
+      "count": "1"
+    },
+    {
+      "id": 8,
+      "status": "DAMAGE",
+      "count": "3"
+    },
+    {
+      "id": 11,
+      "status": "NO_DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 16,
+      "status": "DAMAGE",
+      "count": "4"
+    },
+    {
+      "id": 4,
+      "status": "UNSURE",
+      "count": "1"
+    },
+    {
+      "id": 3,
+      "status": "NO_DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 15,
+      "status": "UNSURE",
+      "count": "1"
+    },
+    {
+      "id": 9,
+      "status": "UNSURE",
+      "count": "1"
+    },
+    {
+      "id": 2,
+      "status": "DAMAGE",
+      "count": "3"
+    },
+    {
+      "id": 6,
+      "status": "DAMAGE",
+      "count": "3"
+    },
+    {
+      "id": 7,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 10,
+      "status": "UNSURE",
+      "count": "1"
+    },
+    {
+      "id": 10,
+      "status": "DAMAGE",
+      "count": "3"
+    },
+    {
+      "id": 12,
+      "status": "DAMAGE",
+      "count": "3"
+    },
+    {
+      "id": 7,
+      "status": "UNSURE",
+      "count": "1"
+    },
+    {
+      "id": 18,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 9,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 17,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 14,
+      "status": "DAMAGE",
+      "count": "4"
+    },
+    {
+      "id": 0,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 15,
+      "status": "NO_DAMAGE",
+      "count": "1"
+    },
+    {
+      "id": 19,
+      "status": "DAMAGE",
+      "count": "4"
+    },
+    {
+      "id": 11,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 3,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 0,
+      "status": "UNSURE",
+      "count": "1"
+    }
+  ]
 
+    result.modified = result.rows[0].reduce(function (previous, current) {
+      if (previous.result[current.id]) {
+        let accumulator = previous.result[current.id]
+        accumulator[current.status] = current.count
+        if ((Number(accumulator[accumulator["highest"]]) || 0) < Number(current.count)) {
+          accumulator["highest"] = current.status
+        } else if (Number(accumulator[accumulator["highest"]]) === Number(current.count)) {
+          /**
+           * Number returns NaN on undefined, so the above OR casts NaN to 0
+           */
+          accumulator["highest"] = "TIE"
+        }
+      } else {
+        let o = {}
+        o[current.status] = current.count
+        o["highest"] = current.status
+        previous.result[current.id] = o
+      }
+      return previous
+    }, {
+      "result" : {}
+    })
 
     return result
   },
   //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
-  
+
   /**
    *  Get polygons of specific user along with status
    */
@@ -74,13 +267,13 @@ module.exports = {
       "type" : "FeatureCollection"
     };
   },
-  
+
   /**
    * Get user polygons in bounded area
    */
 
   "getUserPolygonsInArea" : function* (eventId, lat, lng) {
-      
+
   },
   "authenticateUser" : function* (username, password) {
     var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s' OR email='%s'", password, username, username)
@@ -121,8 +314,8 @@ module.exports = {
   },
 
   "addEvent" : function* (eventName, description, imageUrl) {
-    var queryString = util.format(`INSERT INTO events (name, description, thumbnail, creation_date) 
-                                   VALUES ('%s', '%s', '%s', NOW()) 
+    var queryString = util.format(`INSERT INTO events (name, description, thumbnail, creation_date)
+                                   VALUES ('%s', '%s', '%s', NOW())
                                    RETURNING id`, eventName, description, imageUrl);
     var result
     try {
@@ -133,7 +326,7 @@ module.exports = {
                                 status      text              not null references states(status) DEFAULT 'NOT_EVALUATED',
                                 id          integer           not null unique)`, result.rows[0].id)
       yield db.query(queryString)
-      
+
       queryString = util.format(`CREATE TABLE _%s_sites() INHERITS (sites)`, result.rows[0].id)
       yield db.query(queryString)
 
@@ -142,7 +335,7 @@ module.exports = {
         "status" : 401,
         "success" : false,
         "message" : e,
-      } 
+      }
     }
     return {
       "status" : 200,
@@ -195,10 +388,10 @@ module.exports = {
     });
 
     var queryString = util.format(`SELECT ST_AsGeoJSON(ST_Centroid(ST_Union(%s))) AS geometry
-                               FROM sites 
+                               FROM sites
                                WHERE event_id=%s`, (isMulti) ? "geom_multi" : "geom_poly",eventId)
     var centroidResult = yield db.query(queryString)
-    var centroid = JSON.parse(centroidResult.rows[0].geometry) 
+    var centroid = JSON.parse(centroidResult.rows[0].geometry)
 //    centroidResult.rows[0].geometry.crs = {"type":"name","properties":{"name":"EPSG:4326"}}
     console.log(centroid.coordinates)
 
@@ -207,7 +400,7 @@ module.exports = {
                               WHERE id=%s`, centroid.coordinates[1], centroid.coordinates[0], eventId)
     yield db.query(queryString)
 
-    var thumbnail = "https://maps.googleapis.com/maps/api/staticmap?center=" + centroid.coordinates[1] + "," + centroid.coordinates[0] + "&zoom=7&size=500x500&key=AIzaSyBVZTV9TU1NpITTB1ar5awvfr1BR1OKvlA" 
+    var thumbnail = "https://maps.googleapis.com/maps/api/staticmap?center=" + centroid.coordinates[1] + "," + centroid.coordinates[0] + "&zoom=7&size=500x500&key=AIzaSyBVZTV9TU1NpITTB1ar5awvfr1BR1OKvlA"
 
     queryString = util.format(`UPDATE events SET site_count=%s, thumbnail='%s' WHERE id=%s`, featCol.features.length, thumbnail, eventId)
     yield db.query(queryString)
@@ -244,8 +437,8 @@ module.exports = {
   },
 
   "createUser" : function* (username, password, email, firstName, lastName, salt) {
-    let queryString = util.format(`INSERT INTO users (username, email, first_name, last_name, hash, salt) 
-                                  values ('%s', '%s', '%s', '%s', crypt('%s', '%s'), '%s') 
+    let queryString = util.format(`INSERT INTO users (username, email, first_name, last_name, hash, salt)
+                                  values ('%s', '%s', '%s', '%s', crypt('%s', '%s'), '%s')
                                   RETURNING id`, username, email, firstName, lastName, password, salt, salt);
     try {
       var result = yield db.query(queryString);
@@ -259,7 +452,7 @@ module.exports = {
       message = e
       status = 401
       success = false
-      token = null 
+      token = null
     }
     return {
       "status" : status,
