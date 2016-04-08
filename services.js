@@ -190,7 +190,7 @@ module.exports = {
     }
   ]
 
-    unprocessed.reduce(function (previous, current) {
+    result.modified = result.rows.reduce(function (previous, current) {
       if (previous.result[current.id]) {
         let accumulator = previous.result[current.id]
         accumulator[current.status] = current.count
@@ -215,7 +215,7 @@ module.exports = {
 
 
 
-    return result.rows[0]
+    return result
   },
   //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
 
