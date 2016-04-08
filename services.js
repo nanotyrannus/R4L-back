@@ -213,9 +213,9 @@ module.exports = {
       "result" : {}
     })
 
-    
 
-    return result
+
+    return result.rows[0]
   },
   //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
 
