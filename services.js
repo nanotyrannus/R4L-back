@@ -190,7 +190,7 @@ module.exports = {
     }
   ]
 
-    result.modified = result.rows[0].reduce(function (previous, current) {
+    unprocessed.reduce(function (previous, current) {
       if (previous.result[current.id]) {
         let accumulator = previous.result[current.id]
         accumulator[current.status] = current.count
@@ -212,6 +212,8 @@ module.exports = {
     }, {
       "result" : {}
     })
+
+    
 
     return result
   },
