@@ -19,7 +19,9 @@ module.exports = {
 
     var unprocessed = {}
 
-    unprocessed.reduce(function (previous, current) {}, {})
+    unprocessed.reduce(function (previous, current) {}, {
+      "foo" : "bar"
+    })
 
     return result
   },
