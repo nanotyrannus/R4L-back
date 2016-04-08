@@ -13,17 +13,18 @@ var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
 module.exports = {
   "getEventTotals" : function* (eventId) {
     var queryString = util.format(`select id, status, count(status)
-                                  from _%s_states 
+                                  from _%s_states
                                   group by id, status`, eventId)
     var result = yield db.query(queryString)
 
-    var totals = {}
+    var unprocessed = {}
 
+    unprocessed.reduce(function (previous, current) {}, {})
 
     return result
   },
   //select a.id, ST_AsGeoJSON(geom) AS geometry, properties, b.color from sites as a full outer join ryan_100_colors as b on a.id=b.id;
-  
+
   /**
    *  Get polygons of specific user along with status
    */
@@ -71,13 +72,13 @@ module.exports = {
       "type" : "FeatureCollection"
     };
   },
-  
+
   /**
    * Get user polygons in bounded area
    */
 
   "getUserPolygonsInArea" : function* (eventId, lat, lng) {
-      
+
   },
   "authenticateUser" : function* (username, password) {
     var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s' OR email='%s'", password, username, username)
@@ -118,8 +119,8 @@ module.exports = {
   },
 
   "addEvent" : function* (eventName, description, imageUrl) {
-    var queryString = util.format(`INSERT INTO events (name, description, thumbnail, creation_date) 
-                                   VALUES ('%s', '%s', '%s', NOW()) 
+    var queryString = util.format(`INSERT INTO events (name, description, thumbnail, creation_date)
+                                   VALUES ('%s', '%s', '%s', NOW())
                                    RETURNING id`, eventName, description, imageUrl);
     var result
     try {
@@ -130,7 +131,7 @@ module.exports = {
                                 status      text              not null references states(status) DEFAULT 'NOT_EVALUATED',
                                 id          integer           not null unique)`, result.rows[0].id)
       yield db.query(queryString)
-      
+
       queryString = util.format(`CREATE TABLE _%s_sites() INHERITS (sites)`, result.rows[0].id)
       yield db.query(queryString)
 
@@ -139,7 +140,7 @@ module.exports = {
         "status" : 401,
         "success" : false,
         "message" : e,
-      } 
+      }
     }
     return {
       "status" : 200,
@@ -192,10 +193,10 @@ module.exports = {
     });
 
     var queryString = util.format(`SELECT ST_AsGeoJSON(ST_Centroid(ST_Union(%s))) AS geometry
-                               FROM sites 
+                               FROM sites
                                WHERE event_id=%s`, (isMulti) ? "geom_multi" : "geom_poly",eventId)
     var centroidResult = yield db.query(queryString)
-    var centroid = JSON.parse(centroidResult.rows[0].geometry) 
+    var centroid = JSON.parse(centroidResult.rows[0].geometry)
 //    centroidResult.rows[0].geometry.crs = {"type":"name","properties":{"name":"EPSG:4326"}}
     console.log(centroid.coordinates)
 
@@ -204,7 +205,7 @@ module.exports = {
                               WHERE id=%s`, centroid.coordinates[1], centroid.coordinates[0], eventId)
     yield db.query(queryString)
 
-    var thumbnail = "https://maps.googleapis.com/maps/api/staticmap?center=" + centroid.coordinates[1] + "," + centroid.coordinates[0] + "&zoom=7&size=500x500&key=AIzaSyBVZTV9TU1NpITTB1ar5awvfr1BR1OKvlA" 
+    var thumbnail = "https://maps.googleapis.com/maps/api/staticmap?center=" + centroid.coordinates[1] + "," + centroid.coordinates[0] + "&zoom=7&size=500x500&key=AIzaSyBVZTV9TU1NpITTB1ar5awvfr1BR1OKvlA"
 
     queryString = util.format(`UPDATE events SET site_count=%s, thumbnail='%s' WHERE id=%s`, featCol.features.length, thumbnail, eventId)
     yield db.query(queryString)
@@ -241,8 +242,8 @@ module.exports = {
   },
 
   "createUser" : function* (username, password, email, firstName, lastName, salt) {
-    let queryString = util.format(`INSERT INTO users (username, email, first_name, last_name, hash, salt) 
-                                  values ('%s', '%s', '%s', '%s', crypt('%s', '%s'), '%s') 
+    let queryString = util.format(`INSERT INTO users (username, email, first_name, last_name, hash, salt)
+                                  values ('%s', '%s', '%s', '%s', crypt('%s', '%s'), '%s')
                                   RETURNING id`, username, email, firstName, lastName, password, salt, salt);
     try {
       var result = yield db.query(queryString);
@@ -256,7 +257,7 @@ module.exports = {
       message = e
       status = 401
       success = false
-      token = null 
+      token = null
     }
     return {
       "status" : status,
