@@ -59,15 +59,18 @@ module.exports = {
      * Calculate optimal starting point for this user
      */
 
-    queryString = util.format(`SELECT ST_AsGeoJSON( ST_Centroid( geom_poly  ) ), ST_AsGeoJSON( ST_Centroid(geom_multi  ) ) WHERE id=1`)
+    queryString = util.format(`SELECT ST_AsGeoJSON( ST_Centroid( geom_poly  ) ) AS initial_centroid, ST_AsGeoJSON( ST_Centroid( geom_multi  ) ) AS initial_centroid_multi
+                              FROM _%s_sites
+                              WHERE id=1`, eventId)
 
-    result = yield db.query(queryString)
+    result.result = yield db.query(queryString)
     console.log(result)
 
     return {
       "status" : status,
       "message" : message,
       "features" : result.rows,
+      "initial_centroid" : result.result.rows[0].initial_centroid || result.result.rows[0].initial_centroid_multi,
       "type" : "FeatureCollection"
     };
   },
