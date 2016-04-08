@@ -17,10 +17,200 @@ module.exports = {
                                   group by id, status`, eventId)
     var result = yield db.query(queryString)
 
-    var unprocessed = {}
+    var unprocessed = [
+    {
+      "id": 5,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 6,
+      "status": "NO_DAMAGE",
+      "count": "1"
+    },
+    {
+      "id": 1,
+      "status": "DAMAGE",
+      "count": "1"
+    },
+    {
+      "id": 18,
+      "status": "NO_DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 12,
+      "status": "NO_DAMAGE",
+      "count": "1"
+    },
+    {
+      "id": 13,
+      "status": "DAMAGE",
+      "count": "4"
+    },
+    {
+      "id": 15,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 0,
+      "status": "NO_DAMAGE",
+      "count": "1"
+    },
+    {
+      "id": 4,
+      "status": "DAMAGE",
+      "count": "3"
+    },
+    {
+      "id": 8,
+      "status": "NOT_EVALUATED",
+      "count": "1"
+    },
+    {
+      "id": 8,
+      "status": "DAMAGE",
+      "count": "3"
+    },
+    {
+      "id": 11,
+      "status": "NO_DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 16,
+      "status": "DAMAGE",
+      "count": "4"
+    },
+    {
+      "id": 4,
+      "status": "UNSURE",
+      "count": "1"
+    },
+    {
+      "id": 3,
+      "status": "NO_DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 15,
+      "status": "UNSURE",
+      "count": "1"
+    },
+    {
+      "id": 9,
+      "status": "UNSURE",
+      "count": "1"
+    },
+    {
+      "id": 2,
+      "status": "DAMAGE",
+      "count": "3"
+    },
+    {
+      "id": 6,
+      "status": "DAMAGE",
+      "count": "3"
+    },
+    {
+      "id": 7,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 10,
+      "status": "UNSURE",
+      "count": "1"
+    },
+    {
+      "id": 10,
+      "status": "DAMAGE",
+      "count": "3"
+    },
+    {
+      "id": 12,
+      "status": "DAMAGE",
+      "count": "3"
+    },
+    {
+      "id": 7,
+      "status": "UNSURE",
+      "count": "1"
+    },
+    {
+      "id": 18,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 9,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 17,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 14,
+      "status": "DAMAGE",
+      "count": "4"
+    },
+    {
+      "id": 0,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 15,
+      "status": "NO_DAMAGE",
+      "count": "1"
+    },
+    {
+      "id": 19,
+      "status": "DAMAGE",
+      "count": "4"
+    },
+    {
+      "id": 11,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 3,
+      "status": "DAMAGE",
+      "count": "2"
+    },
+    {
+      "id": 0,
+      "status": "UNSURE",
+      "count": "1"
+    }
+  ]
 
-    unprocessed.reduce(function (previous, current) {}, {
-      "foo" : "bar"
+    result.modified = result.rows[0].reduce(function (previous, current) {
+      if (previous.result[current.id]) {
+        let accumulator = previous.result[current.id]
+        accumulator[current.status] = current.count
+        if ((Number(accumulator[accumulator["highest"]]) || 0) < Number(current.count)) {
+          accumulator["highest"] = current.status
+        } else if (Number(accumulator[accumulator["highest"]]) === Number(current.count)) {
+          /**
+           * Number returns NaN on undefined, so the above OR casts NaN to 0
+           */
+          accumulator["highest"] = "TIE"
+        }
+      } else {
+        let o = {}
+        o[current.status] = current.count
+        o["highest"] = current.status
+        previous.result[current.id] = o
+      }
+      return previous
+    }, {
+      "result" : {}
     })
 
     return result
