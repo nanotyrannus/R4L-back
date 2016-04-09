@@ -17,179 +17,6 @@ module.exports = {
                                   group by id, status`, eventId)
     var result = yield db.query(queryString)
 
-    var unprocessed = [
-    {
-      "id": 5,
-      "status": "DAMAGE",
-      "count": "2"
-    },
-    {
-      "id": 6,
-      "status": "NO_DAMAGE",
-      "count": "1"
-    },
-    {
-      "id": 1,
-      "status": "DAMAGE",
-      "count": "1"
-    },
-    {
-      "id": 18,
-      "status": "NO_DAMAGE",
-      "count": "2"
-    },
-    {
-      "id": 12,
-      "status": "NO_DAMAGE",
-      "count": "1"
-    },
-    {
-      "id": 13,
-      "status": "DAMAGE",
-      "count": "4"
-    },
-    {
-      "id": 15,
-      "status": "DAMAGE",
-      "count": "2"
-    },
-    {
-      "id": 0,
-      "status": "NO_DAMAGE",
-      "count": "1"
-    },
-    {
-      "id": 4,
-      "status": "DAMAGE",
-      "count": "3"
-    },
-    {
-      "id": 8,
-      "status": "NOT_EVALUATED",
-      "count": "1"
-    },
-    {
-      "id": 8,
-      "status": "DAMAGE",
-      "count": "3"
-    },
-    {
-      "id": 11,
-      "status": "NO_DAMAGE",
-      "count": "2"
-    },
-    {
-      "id": 16,
-      "status": "DAMAGE",
-      "count": "4"
-    },
-    {
-      "id": 4,
-      "status": "UNSURE",
-      "count": "1"
-    },
-    {
-      "id": 3,
-      "status": "NO_DAMAGE",
-      "count": "2"
-    },
-    {
-      "id": 15,
-      "status": "UNSURE",
-      "count": "1"
-    },
-    {
-      "id": 9,
-      "status": "UNSURE",
-      "count": "1"
-    },
-    {
-      "id": 2,
-      "status": "DAMAGE",
-      "count": "3"
-    },
-    {
-      "id": 6,
-      "status": "DAMAGE",
-      "count": "3"
-    },
-    {
-      "id": 7,
-      "status": "DAMAGE",
-      "count": "2"
-    },
-    {
-      "id": 10,
-      "status": "UNSURE",
-      "count": "1"
-    },
-    {
-      "id": 10,
-      "status": "DAMAGE",
-      "count": "3"
-    },
-    {
-      "id": 12,
-      "status": "DAMAGE",
-      "count": "3"
-    },
-    {
-      "id": 7,
-      "status": "UNSURE",
-      "count": "1"
-    },
-    {
-      "id": 18,
-      "status": "DAMAGE",
-      "count": "2"
-    },
-    {
-      "id": 9,
-      "status": "DAMAGE",
-      "count": "2"
-    },
-    {
-      "id": 17,
-      "status": "DAMAGE",
-      "count": "2"
-    },
-    {
-      "id": 14,
-      "status": "DAMAGE",
-      "count": "4"
-    },
-    {
-      "id": 0,
-      "status": "DAMAGE",
-      "count": "2"
-    },
-    {
-      "id": 15,
-      "status": "NO_DAMAGE",
-      "count": "1"
-    },
-    {
-      "id": 19,
-      "status": "DAMAGE",
-      "count": "4"
-    },
-    {
-      "id": 11,
-      "status": "DAMAGE",
-      "count": "2"
-    },
-    {
-      "id": 3,
-      "status": "DAMAGE",
-      "count": "2"
-    },
-    {
-      "id": 0,
-      "status": "UNSURE",
-      "count": "1"
-    }
-  ]
-
     result.modified = result.rows.reduce(function (previous, current) {
       if (previous.result[current.id]) {
         let accumulator = previous.result[current.id]
@@ -203,7 +30,7 @@ module.exports = {
           accumulator["highest"] = "TIE"
         }
       } else {
-        let o = {}
+        let o = { "id" : current.id }
         o[current.status] = current.count
         o["highest"] = current.status
         previous.result[current.id] = o
@@ -212,8 +39,6 @@ module.exports = {
     }, {
       "result" : {}
     })
-
-
 
     return result
   },
