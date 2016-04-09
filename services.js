@@ -30,7 +30,13 @@ module.exports = {
           accumulator["highest"] = "TIE"
         }
       } else {
-        let o = { "id" : current.id }
+        let o = {
+          "id" : current.id,
+          "DAMAGE" : 0,
+          "NO_DAMAGE" : 0,
+          "UNSURE" : 0,
+          "NOT_EVALUATED" : 0
+         }
         o[current.status] = current.count
         o["highest"] = current.status
         previous.result[current.id] = o
