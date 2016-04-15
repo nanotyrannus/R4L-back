@@ -19,7 +19,7 @@ module.exports = {
                                    FROM admins
                                    WHERE username='%s' OR email='%s'`, userIdentifier, userIdentifier)
 
-    var queryResult = db.query(queryString)
+    var queryResult = yield db.query(queryString)
     return queryResult
   },
   "getEventTotals" : function* (eventId) {
