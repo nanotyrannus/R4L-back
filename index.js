@@ -9,6 +9,7 @@ var co          = require('co')
 var session     = require("koa-session")
 var fs          = require("fs")
 var jwt         = require("koa-jwt")
+var adminRoutes = require(".routes/admin")
 
 // koa app
 let app = koa()
@@ -78,6 +79,7 @@ co.wrap(function* () {
       services.isAdmin(ctx.get("x-username"))
       yield next
     })
+    app.use(adminRoutes.routes)
 
     let port = config.port || process.env.port || 8282
     app.listen(port)
