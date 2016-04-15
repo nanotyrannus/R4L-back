@@ -16,8 +16,10 @@ module.exports = {
   */
   "isAdmin" : function* (userIdentifier) {
     var queryString = util.format(`SELECT COUNT(*) > 0 AS is_admin
-                                   FROM admins
-                                   WHERE username='%s' OR email='%s'`, userIdentifier, userIdentifier)
+                                   FROM admins AS a
+                                   INNER JOIN users AS b
+                                   ON a.username=b.username
+                                   WHERE a.username='%s' OR a.email='%s'`, userIdentifier, userIdentifier)
 
     var queryResult = yield db.query(queryString)
     return queryResult
