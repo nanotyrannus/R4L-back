@@ -20,7 +20,7 @@ module.exports = {
                                    WHERE username='%s' OR email='%s'`, userIdentifier, userIdentifier)
 
     var queryResult = db.query(queryString)
-    console.log(queryResult)
+    return queryResult
   },
   "getEventTotals" : function* (eventId) {
     var queryString = util.format(`select id, status, count(status)
