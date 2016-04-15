@@ -13,4 +13,4 @@ router
     this.body = "You're an admin!"
   })
 
-mode.exports.routes = router.routes()
+module.exports.routes = router.routes()
