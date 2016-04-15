@@ -48,7 +48,10 @@ co.wrap(function* () {
       }
       console.log(ctx.state.user)
     })
-
+    app.use(function* (next) {
+      console.log("FROM SECOND MIDDLEWARE")
+      yield next
+    })
     let userRoutes = require('./routes/user')
     app.use(userRoutes.publicRoutes)
     app.use(jwt({
