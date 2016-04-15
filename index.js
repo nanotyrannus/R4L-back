@@ -70,7 +70,7 @@ co.wrap(function* () {
     })
     app.use(userRoutes.protectedRoutes)
     app.use(function* (next) {
-      
+      services.isAdmin(ctx.get("x-username"))
     })
 
     let port = config.port || process.env.port || 8282
