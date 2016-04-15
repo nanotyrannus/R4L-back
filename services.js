@@ -22,7 +22,7 @@ module.exports = {
                                    WHERE b.username='%s' OR b.email='%s'`, userIdentifier, userIdentifier)
 
     var queryResult = yield db.query(queryString)
-    return queryResult
+    return queryResult.rows[0].is_admin
   },
   "getEventTotals" : function* (eventId) {
     var queryString = util.format(`select id, status, count(status)
