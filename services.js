@@ -19,7 +19,7 @@ module.exports = {
                                    FROM admins AS a
                                    INNER JOIN users AS b
                                    ON a.username=b.username
-                                   WHERE a.username='%s' OR a.email='%s'`, userIdentifier, userIdentifier)
+                                   WHERE b.username='%s' OR b.email='%s'`, userIdentifier, userIdentifier)
 
     var queryResult = yield db.query(queryString)
     return queryResult
