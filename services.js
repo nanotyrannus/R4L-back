@@ -9,7 +9,7 @@ var fs    = require("fs")
 var home = process.env.HOME
 var publicKey = fs.readFileSync(home + "/.ssh/radar.rsa.pub")
 var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
-
+//test change
 module.exports = {
   /**
   * @userIdentifier can be either an email or username
