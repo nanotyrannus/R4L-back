@@ -9,7 +9,7 @@ var co          = require('co')
 var session     = require("koa-session")
 var fs          = require("fs")
 var jwt         = require("koa-jwt")
-var adminRoutes = require(".routes/admin")
+var adminRoutes = require("./routes/admin")
 
 // koa app
 let app = koa()
