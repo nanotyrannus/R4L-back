@@ -73,6 +73,7 @@ co.wrap(function* () {
       var ctx = this
       console.log("final middleware reached by", ctx.get("x-username"))
       services.isAdmin(ctx.get("x-username"))
+      yield next
     })
 
     let port = config.port || process.env.port || 8282
