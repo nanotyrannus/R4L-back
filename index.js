@@ -76,7 +76,7 @@ co.wrap(function* () {
     app.use(function* (next) {
       var ctx = this
       console.log("final middleware reached by", ctx.get("x-username"))
-      services.isAdmin(ctx.get("x-username"))
+      console.log(yield services.isAdmin(ctx.get("x-username")))
       yield next
     })
     app.use(adminRoutes.routes)
