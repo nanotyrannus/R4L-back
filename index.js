@@ -48,7 +48,7 @@ co.wrap(function* () {
       }
       console.log(ctx.state.user)
     })
-    
+
     let userRoutes = require('./routes/user')
     app.use(userRoutes.publicRoutes)
     app.use(jwt({
@@ -57,7 +57,7 @@ co.wrap(function* () {
     }))
     app.use(function* (next) {
       var ctx = this
-      if (ctx.request.method !== "POST" || ctx.state.user.username === ctx.get("x-username")) { 
+      if (ctx.request.method !== "POST" || ctx.state.user.username === ctx.get("x-username")) {
         yield next
       } else {
         console.log(ctx.state.user.username, "\n", ctx.request.body.username)
@@ -67,8 +67,12 @@ co.wrap(function* () {
           "status" : 403
         }
       }
-    }) 
+    })
     app.use(userRoutes.protectedRoutes)
+    app.use(function* (next) {
+      
+    })
+
     let port = config.port || process.env.port || 8282
     app.listen(port)
     console.log("App is listenning on port: " + port)

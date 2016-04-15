@@ -11,6 +11,17 @@ var publicKey = fs.readFileSync(home + "/.ssh/radar.rsa.pub")
 var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
 
 module.exports = {
+  /**
+  * @userIdentifier can be either an email or username
+  */
+  "isAdmin" : function* (userIdentifier) {
+    var queryString = util.format(`SELECT COUNT(*) > 0 AS is_admin
+                                   FROM admins
+                                   WHERE username='%s' OR email='%s'`, userIdentifier, userIdentifier)
+
+    var queryResult = db.query(queryString)
+    console.log(queryResult)
+  },
   "getEventTotals" : function* (eventId) {
     var queryString = util.format(`select id, status, count(status)
     from _%s_states
