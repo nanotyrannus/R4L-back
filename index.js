@@ -49,10 +49,6 @@ co.wrap(function* () {
       }
       console.log(ctx.state.user)
     })
-    app.use(function* (next) {
-      console.log("FROM SECOND MIDDLEWARE")
-      yield next
-    })
     let userRoutes = require('./routes/user')
     app.use(userRoutes.publicRoutes)
     app.use(jwt({
@@ -65,19 +61,18 @@ co.wrap(function* () {
         yield next
       } else {
         console.log(ctx.state.user.username, "\n", ctx.request.body.username)
-        throw {
-          "name" : "UnauthorizedError",
-          "message" : "Token assignee mismatch.",
-          "status" : 403
-        }
+        throw new UnauthorizedError("Token assignee mismatch.")
       }
     })
     app.use(userRoutes.protectedRoutes)
     app.use(function* (next) {
       var ctx = this
       console.log("final middleware reached by", ctx.get("x-username"))
-      console.log(yield services.isAdmin(ctx.get("x-username")))
-      yield next
+      if (yield services.isAdmin(ctx.get("x-username"))) {
+        yield next
+      } else {
+        throw new UnauthorizedError("No admin privileges.")
+      }
     })
     app.use(adminRoutes.routes)
 
@@ -88,3 +83,10 @@ co.wrap(function* () {
     console.log(e)
   }
 })()
+
+var UnauthorizedError = function (message) {
+  this.name = UnauthorizedError
+  this.message = message
+  this.stack = (new Error()).stack
+  this.status = 403
+}
