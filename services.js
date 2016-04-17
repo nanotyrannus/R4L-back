@@ -16,10 +16,10 @@ module.exports = {
   */
   "isAdmin" : function* (userIdentifier) {
     var queryString = util.format(`SELECT COUNT(*) > 0 AS is_admin
-                                   FROM admins AS a
-                                   INNER JOIN users AS b
-                                   ON a.username=b.username
-                                   WHERE b.username='%s' OR b.email='%s'`, userIdentifier, userIdentifier)
+    FROM admins AS a
+    INNER JOIN users AS b
+    ON a.username=b.username
+    WHERE b.username='%s' OR b.email='%s'`, userIdentifier, userIdentifier)
 
     var queryResult = yield db.query(queryString)
     return queryResult.rows[0].is_admin
@@ -288,9 +288,19 @@ module.exports = {
           },
 
           "getEvents" : function* () {
-            let queryString = "SELECT id, site_count, name, description, thumbnail, creation_date, ST_AsGeoJSON(centroid) AS centroid FROM events";
+            let queryString = `SELECT id, site_count, name, description, thumbnail, creation_date, ST_AsGeoJSON(centroid) AS centroid FROM events`;
             let result = yield db.query(queryString);
             return result.rows;
+          },
+
+          "getEventsPage" : function* (page) {
+            var queryString = util.format(`SELECT id, site_count, name, description, thumbnail, creation_date, ST_AsGeoJSON(centroid) AS centroid
+                                           LIMIT 10 OFFSET %s`, page * 10)
+            var result = yield db.query(queryString)
+            return {
+              "result" : result.rows,
+              "page" : page
+            }
           },
 
           "createUser" : function* (username, password, email, firstName, lastName, salt) {
@@ -374,7 +384,7 @@ module.exports = {
                 last_name     text                          not null,
                 hash          text                          not null,
                 salt          text                          not null,
-                weight        numeric(10, 5)                not null DEFAULT 1.00, 
+                weight        numeric(10, 5)                not null DEFAULT 1.00,
               )`)
 
               yield db.query(`CREATE TABLE IF NOT EXISTS admins (
