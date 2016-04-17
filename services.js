@@ -373,7 +373,8 @@ module.exports = {
                 first_name    text                          not null,
                 last_name     text                          not null,
                 hash          text                          not null,
-                salt          text                          not null
+                salt          text                          not null,
+                weight        numeric(10, 5)                not null DEFAULT 1.00, 
               )`)
 
               yield db.query(`CREATE TABLE IF NOT EXISTS admins (
