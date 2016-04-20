@@ -182,7 +182,7 @@ module.exports = {
           CREATE TABLE _%s_states(
             date        timestamp         not null,
             status      text              not null references states(status) DEFAULT 'NOT_EVALUATED',
-            id          integer           not null unique
+            id          integer           not null unique,
             weight      numeric(10, 5)    DEFAULT 0.0)`, result.rows[0].id)
             yield db.query(queryString)
 
