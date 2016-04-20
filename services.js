@@ -344,8 +344,8 @@ module.exports = {
                       SELECT weight
                       FROM users
                       WHERE username='%s' OR email='%s'`, username, username)
-                      //let weight = yield db.queryString()
-                      //console.log(weight)
+                      let weight = yield db.queryString()
+                      console.log("weight", weight.rows)
                       queryString = util.format(`
                         INSERT INTO %s (date, status, id, w)
                         VALUES (NOW(), '%s', %s, %s)
