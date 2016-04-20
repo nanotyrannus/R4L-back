@@ -345,13 +345,13 @@ module.exports = {
                       FROM users
                       WHERE username='%s' OR email='%s'`, username, username)
                       let weight = yield db.query(queryString)
-                      console.log("weight", weight.rows)
+                      console.log("weight", weight.rows[0].weight)
                       queryString = util.format(`
-                        INSERT INTO %s (date, status, id, w)
+                        INSERT INTO %s (date, status, id, weight)
                         VALUES (NOW(), '%s', %s, %s)
                         ON CONFLICT ON CONSTRAINT %s_%s_states_id_key
                         DO UPDATE SET status=excluded.status, date=NOW()
-                        RETURNING *`, tableName, status, polygonId, username, eventId)
+                        RETURNING *`, tableName, status, polygonId, weight.rows[0].weight, username, eventId)
 
                         var result = yield db.query(queryString)
                         var status = 200
