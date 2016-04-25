@@ -26,7 +26,7 @@ module.exports = {
   },
   "getEventTotals" : function* (eventId) {
     var queryString = util.format(`
-      select id, status, count(status)
+      select id, status, count(status) as integer_count, sum(weight) as count
       from _%s_states
       group by id, status`, eventId)
 
