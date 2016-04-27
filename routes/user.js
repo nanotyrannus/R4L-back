@@ -80,7 +80,7 @@ protectedRouter
     let ctx     = this
     let body    = ctx.request.body
     let result  = yield services.addEvent(body.eventName, body.description || "", body.imageUrl || "")
-    
+
     if (result.success && body.featureCollection) {
       result.result = yield services.addPolygons(body.featureCollection, result.event_id)
     }
@@ -113,7 +113,7 @@ protectedRouter
     var body    = ctx.request.body
     var result  = yield services.getUserPolygons(ctx.params.username, ctx.params.id, body.min_lng, body.max_lng, body.min_lat, body.max_lat)
     //var result  = yield services.getUserPolygonsInArea(ctx.params.username, ctx.params.id, bounds.min_lng, bounds.max_lng, bounds.min_lat, bounds.max_lat)
-    console.log(ctx.request.body)
+    console.log("================ REQUEST ================\n", ctx.request.body)
     ctx.body    = result
   })
 

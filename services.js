@@ -131,7 +131,11 @@ module.exports = {
     */
 
     "getUserPolygonsInArea" : function* (eventId, lat, lng) {
-
+/*
+SELECT COUNT(*)
+FROM _%s_sites
+WHERE geom_poly && ST_Transform(ST_MakeEnvelope(%s, %s, %s, %s, 4326), 4326);
+*/
     },
     "authenticateUser" : function* (username, password) {
       var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s' OR email='%s'", password, username, username)
