@@ -106,6 +106,7 @@ protectedRouter
   .get("/user/:username/event/:id", function* () {
     var ctx     = this
     var result  = yield services.getUserPolygons(ctx.params.username, ctx.params.id)
+    console.log("================ REQUEST ================\n", ctx.request.body)
     ctx.body    = result
   })
   .post("/user/:username/event/:id", function* () {
@@ -113,7 +114,6 @@ protectedRouter
     var body    = ctx.request.body
     var result  = yield services.getUserPolygons(ctx.params.username, ctx.params.id, body.min_lng, body.max_lng, body.min_lat, body.max_lat)
     //var result  = yield services.getUserPolygonsInArea(ctx.params.username, ctx.params.id, bounds.min_lng, bounds.max_lng, bounds.min_lat, bounds.max_lat)
-    console.log("================ REQUEST ================\n", ctx.request.body)
     ctx.body    = result
   })
 
