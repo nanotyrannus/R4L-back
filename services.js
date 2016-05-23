@@ -137,7 +137,7 @@ module.exports = {
                          ST_Transform(ST_MakeEnvelope(${bounds.minLng}, ${bounds.minLat}, ${bounds.maxLng}, ${bounds.maxLat}, 4326), 4326)`
       var result = yield db.query(queryString)
       console.log(`from services.getUserPolygonsInArea ~~~`)
-      return result
+      return result.rows
     },
     "authenticateUser" : function* (username, password) {
       var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s' OR email='%s'", password, username, username)
