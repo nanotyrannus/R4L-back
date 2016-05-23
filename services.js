@@ -132,13 +132,14 @@ module.exports = {
     */
 
     "getUserPolygonsInArea" : function* (username, eventId, bounds) {
-      var queryString = `SELECT COUNT(*) FROM _${eventId}_sites
+      var queryString = `SELECT id, pos FROM _${eventId}_sites
                          WHERE geom_poly &&
                          ST_Transform(ST_MakeEnvelope(${bounds.minLng}, ${bounds.minLat}, ${bounds.maxLng}, ${bounds.maxLat}, 4326), 4326)`
       var result = yield db.query(queryString)
       console.log(`from services.getUserPolygonsInArea ~~~`)
       return result.rows
     },
+
     "authenticateUser" : function* (username, password) {
       var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s' OR email='%s'", password, username, username)
       try {
