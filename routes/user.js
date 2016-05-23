@@ -111,7 +111,7 @@ protectedRouter
       "maxLng" : params.maxLng,
       "maxLat" : params.maxLat
     }
-    console.log(`URL: `, ctx.request.url)
+    console.log(`QUERY: `, ctx.request.querystring)
     var result
     if (false) {
       console.log(`Parameters detected! Executing getUserPolygonsInArea`)
