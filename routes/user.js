@@ -104,7 +104,7 @@ protectedRouter
   })
   .get("/user/:username/event/:id", function* () {
     var ctx     = this
-    var params  = ctx.query
+    var params  = ctx.params
     var bounds  = {
       "minLng" : params.minLng,
       "minLat" : params.minLat,
