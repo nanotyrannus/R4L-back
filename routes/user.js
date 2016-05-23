@@ -1,15 +1,14 @@
 'use strict';
 
+let Router      = require('koa-router')
+let db          = require("../shared/db.js")
+let services    = require("../services.js")
+var fs          = require("fs")
+var jwt         = require("koa-jwt")
 
-let Router    = require('koa-router')
-let db        = require("../shared/db.js")
-let services  = require("../services.js")
-var fs        = require("fs")
-var jwt       = require("koa-jwt")
-
-var home = process.env.HOME
-var publicKey = fs.readFileSync(home + "/.ssh/radar.rsa.pub")
-var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
+var home        = process.env.HOME
+var publicKey   = fs.readFileSync(home + "/.ssh/radar.rsa.pub")
+var privateKey  = fs.readFileSync(home + "/.ssh/radar.rsa")
 
 var publicRouter = new Router()
 var protectedRouter = new Router()
@@ -105,14 +104,35 @@ protectedRouter
   })
   .get("/user/:username/event/:id", function* () {
     var ctx     = this
-    var result  = yield services.getUserPolygons(ctx.params.username, ctx.params.id)
+    var params  = ctx.params
+    var bounds  = {
+      "minLng" : params.minLng,
+      "minLat" : params.minLat,
+      "maxLng" : params.maxLng,
+      "maxLat" : params.maxLat
+    }
+    var result
+    if (params) {
+      console.log(`Parameters detected! Executing getUserPolygonsInArea`)
+      result = yield services.getUserPolygonsInArea(params.id, bounds)
+    } else {
+      console.log(`No parameters detected. Executing getUserPolygons`)
+      result = yield services.getUserPolygons(ctx.params.username, ctx.params.id)
+    }
     console.log("================ REQUEST ================\n", ctx.request.body)
     ctx.body    = result
   })
   .post("/user/:username/event/:id", function* () {
     var ctx     = this
     var body    = ctx.request.body
-    var result  = yield services.getUserPolygons(ctx.params.username, ctx.params.id, body.min_lng, body.max_lng, body.min_lat, body.max_lat)
+    var params  = ctx.params
+    var bounds  = {
+      "minLng" : params.minLng,
+      "minLat" : params.minLat,
+      "maxLng" : params.maxLng,
+      "maxLat" : params.maxLat
+    }
+    var result  = yield services.getUserPolygons(ctx.params.username, ctx.params.id, bounds)
     //var result  = yield services.getUserPolygonsInArea(ctx.params.username, ctx.params.id, bounds.min_lng, bounds.max_lng, bounds.min_lat, bounds.max_lat)
     ctx.body    = result
   })

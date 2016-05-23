@@ -128,14 +128,16 @@ module.exports = {
 
     /**
     * Get user polygons in bounded area
+    * Polygons without states
     */
 
-    "getUserPolygonsInArea" : function* (eventId, lat, lng) {
-/*
-SELECT COUNT(*)
-FROM _%s_sites
-WHERE geom_poly && ST_Transform(ST_MakeEnvelope(%s, %s, %s, %s, 4326), 4326);
-*/
+    "getUserPolygonsInArea" : function* (username, eventId, bounds) {
+      var queryString = `SELECT COUNT(*) FROM _${eventId}_sites
+                         WHERE geom_poly &&
+                         ST_Transform(ST_MakeEnvelope(${bounds.minLng}, ${bounds.minLat}, ${bounds.maxLng}, ${bounds.maxLat}, 4326), 4326)`
+      var result = yield db.query(queryString)
+      console.log(`from services.getUserPolygonsInArea ~~~`)
+      return result
     },
     "authenticateUser" : function* (username, password) {
       var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s' OR email='%s'", password, username, username)
