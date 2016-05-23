@@ -105,11 +105,12 @@ protectedRouter
   .get("/user/:username/event/:id", function* () {
     var ctx     = this
     var params  = ctx.params
+    var query   = ctx.query
     var bounds  = {
-      "minLng" : params.minLng,
-      "minLat" : params.minLat,
-      "maxLng" : params.maxLng,
-      "maxLat" : params.maxLat
+      "minLng" : query.minLng,
+      "minLat" : query.minLat,
+      "maxLng" : query.maxLng,
+      "maxLat" : query.maxLat
     }
     console.log(`QUERY: `, ctx.request.querystring)
     var result
