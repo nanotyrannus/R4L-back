@@ -113,7 +113,7 @@ protectedRouter
     }
     console.log(`URL: `, ctx.request.url)
     var result
-    if (params) {
+    if (false) {
       console.log(`Parameters detected! Executing getUserPolygonsInArea`)
       result = yield services.getUserPolygonsInArea("", params.id, bounds)
     } else {
