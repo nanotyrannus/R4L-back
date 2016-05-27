@@ -136,7 +136,7 @@ module.exports = {
         id integer not null unique
       ) INHERITS (_${eventId}_states)`
 
-      yield queryString
+      yield db.query(queryString)
 
       queryString = `SELECT a.id, ST_AsGeoJSON(geom_poly) AS geometry, ST_AsGeoJSON(geom_multi) AS geometry_multi, (properties || jsonb_build_object('status',
       (
