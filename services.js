@@ -132,7 +132,7 @@ module.exports = {
     */
 
     "getUserPolygonsInArea" : function* (username, eventId, bounds) {
-      var queryString = `SELECT id, pos FROM _${eventId}_sites
+      var queryString = `SELECT id FROM _${eventId}_sites
                          WHERE geom_poly &&
                          ST_Transform(ST_MakeEnvelope(${bounds.minLng}, ${bounds.minLat}, ${bounds.maxLng}, ${bounds.maxLat}, 4326), 4326)`
       var result = yield db.query(queryString)

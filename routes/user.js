@@ -112,9 +112,12 @@ protectedRouter
       "maxLng" : query.maxLng,
       "maxLat" : query.maxLat
     }
+    var ids = query.ids
     console.log(`QUERY: `, ctx.request.querystring)
     var result
-    if (ctx.request.querystring) {
+    if (ids) {
+      console.log(`IDs recieved: ${ids}`)
+    } else if (ctx.request.querystring) {
       console.log(`Parameters detected! Executing getUserPolygonsInArea`)
       result = yield services.getUserPolygonsInArea("", params.id, bounds)
     } else {
