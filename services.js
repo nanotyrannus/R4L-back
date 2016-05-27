@@ -147,8 +147,8 @@ module.exports = {
       )
     )) AS properties, 'Feature' AS type
     FROM _${eventId}_sites AS a
-    WHERE a.id IN (${idList})
-    FULL OUTER JOIN %s AS b ON a.id=b.id`
+    FULL OUTER JOIN %s AS b ON a.id=b.id
+    WHERE a.id IN (${idList})`
     var result = yield db.query(queryString)
     return result
     },
