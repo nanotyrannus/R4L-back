@@ -130,8 +130,29 @@ module.exports = {
     * Get user polygons in bounded area
     * Polygons without states
     */
+    "getUserPolygonsInArea" : function* getUserPolygonsInArea(username, eventId, idList) {
+      var tableName = `${username}_${eventId}_states`
+      var queryString = `CREATE TABLE IF NOT EXISTS ${tableName}(
+        id integer not null unique
+      ) INHERITS (_${eventId}_states)`
 
-    "getUserPolygonsInArea" : function* (username, eventId, bounds) {
+      yield queryString
+
+      queryString = `SELECT a.id, ST_AsGeoJSON(geom_poly) AS geometry, ST_AsGeoJSON(geom_multi) AS geometry_multi, (properties || jsonb_build_object('status',
+      (
+        SELECT
+        CASE WHEN b.status IS NULL THEN 'NOT_EVALUATED'
+        ELSE b.status
+        END
+      )
+    )) AS properties, 'Feature' AS type
+    FROM _${eventId}_sites AS a
+    WHERE a.id IN (${idList})
+    FULL OUTER JOIN %s AS b ON a.id=b.id`
+    var result = yield db.query(queryString)
+    return result
+    },
+    "getUserPolygonIdsInArea" : function* (username, eventId, bounds) {
       var queryString = `SELECT id FROM _${eventId}_sites
                          WHERE geom_poly &&
                          ST_Transform(ST_MakeEnvelope(${bounds.minLng}, ${bounds.minLat}, ${bounds.maxLng}, ${bounds.maxLat}, 4326), 4326)`
