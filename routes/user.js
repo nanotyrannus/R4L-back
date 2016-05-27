@@ -116,7 +116,7 @@ protectedRouter
     var result
     if (query.ids) {
       console.log(`IDs recieved: ${query.ids}`)
-      result = yield services.getUserPolygonsInArea(params.username, params.id, queryids)
+      result = yield services.getUserPolygonsInArea(params.username, params.id, query.ids)
     } else if (ctx.request.querystring) {
       console.log(`Parameters detected! Executing getUserPolygonsInArea`)
       result = yield services.getUserPolygonIdsInArea("", params.id, bounds)
