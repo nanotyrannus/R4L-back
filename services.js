@@ -105,17 +105,21 @@ module.exports = {
         status = 401
         message = e
       }
+//TODO
+      queryString = `SELECT `
 
       /**
       * Calculate optimal starting point for this user
       */
 
       queryString = util.format(`SELECT ST_AsGeoJSON( ST_Centroid( geom_poly  ) ) AS initial_centroid, ST_AsGeoJSON( ST_Centroid( geom_multi  ) ) AS initial_centroid_multi
-      FROM _%s_sites
-      WHERE id=1`, eventId)
+      FROM _%s_sites`, eventId)
+
+
 
       result.result = yield db.query(queryString)
-      console.log(result)
+      var centroids = result.result.rows
+      console.log(centroid)
 
       return {
         "status" : status,
@@ -147,8 +151,10 @@ module.exports = {
       )
     )) AS properties, 'Feature' AS type
     FROM _${eventId}_sites AS a
-    FULL OUTER JOIN ${tableName} AS b ON a.id=b.id
-    WHERE a.id IN (${idList})`
+    FULL OUTER JOIN ${tableName} AS b ON a.id=b.id`
+    if (idList) {
+      queryString += ` WHERE a.id IN (${idList})`
+    }
     var result = yield db.query(queryString)
     return result
     },
@@ -294,7 +300,9 @@ module.exports = {
 
               return result;
             },
-
+            "getInitialPolygon" : function* getInitialPolygon(username, eventId) {
+              var queryString = `SELECT `
+            },
             //postgres returns JSONB as \" delimited strings. client must parse.
             "getEventPolygons" : function* (eventId) {
               let queryString = util.format(`
