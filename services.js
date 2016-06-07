@@ -109,7 +109,7 @@ exports.getUserPolygons = function* getUserPolygons(username, eventId) {
 
     result.result = yield db.query(queryString)
     var centroids = result.result.rows
-    console.log("INITIAL CENTROIDS: ", centroid)
+    console.log("INITIAL CENTROIDS: ", centroids)
 
     return {
         "status": status,
