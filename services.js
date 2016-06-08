@@ -111,12 +111,12 @@ exports.getUserPolygons = function* getUserPolygons(username, eventId) {
     result.result = yield db.query(queryString)
     var centroids = result.result.rows
     console.log("INITIAL CENTROIDS: ", centroids)
-
+    let randomIndex = Math.floor(centroids.length*Math.random())
     return {
         "status": status,
         "message": message,
         "features": result.rows,
-        "initial_centroid": result.result.rows[0].initial_centroid || result.result.rows[0].initial_centroid_multi,
+        "initial_centroid": result.result.rows[randomIndex].initial_centroid || result.result.rows[randomIndex].initial_centroid_multi,
         "type": "FeatureCollection"
     }
 }
