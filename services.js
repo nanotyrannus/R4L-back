@@ -17,7 +17,7 @@ exports.isAdmin = function* isAdmin(userIdentifier) {
     FROM admins AS a
     INNER JOIN users AS b
     ON a.username=b.username
-    WHERE b.username='${userIdentifier}' OR b.email='${userIdentifier}'`)
+    WHERE b.username='${ userIdentifier }' OR b.email='${ userIdentifier }'`)
 
     var queryResult = yield db.query(queryString)
     return queryResult.rows[0].is_admin
@@ -26,7 +26,7 @@ exports.isAdmin = function* isAdmin(userIdentifier) {
 exports.getEventTotals = function* getEventTotals(eventId) {
     var queryString = `
     SELECT id, status, count(status) AS integer_count, SUM(weight) AS count 
-    FROM _${eventId}_states 
+    FROM _${ eventId }_states 
     GROUP BY id, status`
 
     try {
@@ -104,12 +104,10 @@ exports.getUserPolygons = function* getUserPolygons(username, eventId) {
     /**
      * Calculate optimal starting point for this user
      */
-
-    queryString = util.format(`SELECT ST_AsGeoJSON( ST_Centroid( geom_poly  ) ) AS initial_centroid, ST_AsGeoJSON( ST_Centroid( geom_multi  ) ) AS initial_centroid_multi
-  FROM _%s_sites`, eventId)
-
-
-
+    queryString = `
+    SELECT ST_AsGeoJSON( ST_Centroid( geom_poly  ) ) AS initial_centroid, ST_AsGeoJSON( ST_Centroid( geom_multi  ) ) AS initial_centroid_multi
+    FROM _${eventId}_sites`
+    
     result.result = yield db.query(queryString)
     var centroids = result.result.rows
     console.log("INITIAL CENTROIDS: ", centroids)
@@ -124,25 +122,25 @@ exports.getUserPolygons = function* getUserPolygons(username, eventId) {
 }
 
 exports.getUserPolygonsInArea = function* getUserPolygonsInArea(username, eventId, idList) {
-    var tableName = `${username}_${eventId}_states`
-    var queryString = `CREATE TABLE IF NOT EXISTS ${tableName}(
+    var tableName = `${ username }_${ eventId }_states`
+    var queryString = `CREATE TABLE IF NOT EXISTS ${ tableName } (
     id integer not null unique
-  ) INHERITS (_${eventId}_states)`
+    ) INHERITS (_${ eventId }_states)`
 
     yield db.query(queryString)
 
     queryString = `SELECT a.id, ST_AsGeoJSON(geom_poly) AS geometry, ST_AsGeoJSON(geom_multi) AS geometry_multi, (properties || jsonb_build_object('status',
-  (
-    SELECT
-    CASE WHEN b.status IS NULL THEN 'NOT_EVALUATED'
-    ELSE b.status
-    END
-  )
-)) AS properties, 'Feature' AS type
-FROM _${eventId}_sites AS a
-FULL OUTER JOIN ${tableName} AS b ON a.id=b.id`
+    ( 
+      SELECT
+      CASE WHEN b.status IS NULL THEN 'NOT_EVALUATED'
+      ELSE b.status
+      END
+    )
+    )) AS properties, 'Feature' AS type
+    FROM _${ eventId }_sites AS a
+    FULL OUTER JOIN ${ tableName } AS b ON a.id=b.id`
     if (idList) {
-        queryString += ` WHERE a.id IN (${idList})`
+        queryString += ` WHERE a.id IN (${ idList })`
     }
     var result = yield db.query(queryString)
     return result
@@ -201,9 +199,10 @@ exports.authenticateUser = function* authenticateUser(username, password) {
 }
 
 exports.addEvent = function* addEvent(eventName, description, imageUrl) {
-    var queryString = util.format(`INSERT INTO events (name, description, thumbnail, creation_date)
-  VALUES ('%s', '%s', '%s', NOW())
-  RETURNING id`, eventName, description, imageUrl);
+    var queryString = `
+    INSERT INTO events (name, description, thumbnail, creation_date)
+    VALUES ('${ eventName }', '${ description }', '${ imageUrl }', NOW())
+    RETURNING id`
     var result
     try {
         result = yield db.query(queryString)
@@ -235,7 +234,7 @@ exports.addEvent = function* addEvent(eventName, description, imageUrl) {
 }
 
 exports.deleteEvent = function* deleteEvent(eventId) {
-    var queryString = `DELETE FROM events WHERE id=${eventId}`
+    var queryString = `DELETE FROM events WHERE id=${ eventId }`
     try {
         var result = yield db.query(queryString)
     } catch (e) {
