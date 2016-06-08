@@ -1,10 +1,10 @@
 'use strict';
 
-let Router      = require('koa-router')
-let db          = require("../shared/db.js")
-let services    = require("../services.js")
-var fs          = require("fs")
-var jwt         = require("koa-jwt")
+const Router      = require('koa-router')
+const db          = require("../shared/db.js")
+const services    = require("../services.js")
+const fs          = require("fs")
+const jwt         = require("koa-jwt")
 
 var home        = process.env.HOME
 var publicKey   = fs.readFileSync(home + "/.ssh/radar.rsa.pub")

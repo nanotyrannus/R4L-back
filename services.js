@@ -12,24 +12,28 @@ var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
 
 
 exports.isAdmin = function* isAdmin(userIdentifier) {
-    var queryString = util.format(`SELECT COUNT(*) > 0 AS is_admin
-  FROM admins AS a
-  INNER JOIN users AS b
-  ON a.username=b.username
-  WHERE b.username='%s' OR b.email='%s'`, userIdentifier, userIdentifier)
+    var queryString = util.format(`
+    SELECT COUNT(*) > 0 AS is_admin
+    FROM admins AS a
+    INNER JOIN users AS b
+    ON a.username=b.username
+    WHERE b.username='${userIdentifier}' OR b.email='${userIdentifier}'`)
 
     var queryResult = yield db.query(queryString)
     return queryResult.rows[0].is_admin
 }
 
 exports.getEventTotals = function* getEventTotals(eventId) {
-    var queryString = `SELECT id, status, count(status) AS integer_count, SUM(weight) AS count FROM _${eventId}_states GROUP BY id, status`
+    var queryString = `
+    SELECT id, status, count(status) AS integer_count, SUM(weight) AS count 
+    FROM _${eventId}_states 
+    GROUP BY id, status`
 
     try {
         var status = 200
         var message = null
         var result = yield db.query(queryString)
-        var processed = result.rows.reduce(function(previous, current) {
+        var processed = result.rows.reduce(function reducer(previous, current) {
             if (previous.result[current.id]) {
                 let accumulator = previous.result[current.id]
                 accumulator[current.status] = Number(current.count)
@@ -52,9 +56,7 @@ exports.getEventTotals = function* getEventTotals(eventId) {
                 previous.result[current.id] = o
             }
             return previous
-        }, {
-            "result": {}
-        })
+        }, { "result": {} })
     } catch (e) {
         status = 401
         message = e
@@ -70,9 +72,10 @@ exports.getEventTotals = function* getEventTotals(eventId) {
 // Get polygons with user status
 exports.getUserPolygons = function* getUserPolygons(username, eventId) {
     var tableName = util.format("%s_%s_states", username, eventId);
-    var queryString = util.format(`CREATE TABLE IF NOT EXISTS %s(
+    var queryString = `
+    CREATE TABLE IF NOT EXISTS ${tableName}(
     id          integer           not null unique
-  ) INHERITS (_%s_states)`, tableName, eventId)
+    ) INHERITS (_${eventId}_states)`
 
     yield db.query(queryString)
 
@@ -84,9 +87,9 @@ exports.getUserPolygons = function* getUserPolygons(username, eventId) {
       ELSE b.status
       END
     )
-  )) AS properties, 'Feature' AS type
-  FROM _%s_sites AS a
-  FULL OUTER JOIN %s AS b ON a.id=b.id`, eventId, tableName);
+    )) AS properties, 'Feature' AS type
+    FROM _%s_sites AS a
+    FULL OUTER JOIN %s AS b ON a.id=b.id`, eventId, tableName);
     try {
         var result = yield db.query(queryString);
         var status = 200
@@ -117,7 +120,7 @@ exports.getUserPolygons = function* getUserPolygons(username, eventId) {
         "features": result.rows,
         "initial_centroid": result.result.rows[0].initial_centroid || result.result.rows[0].initial_centroid_multi,
         "type": "FeatureCollection"
-    };
+    }
 }
 
 exports.getUserPolygonsInArea = function* getUserPolygonsInArea(username, eventId, idList) {
@@ -184,8 +187,8 @@ exports.authenticateUser = function* authenticateUser(username, password) {
             "token": jwt.sign({
                 "username": username
             }, privateKey, {
-                "algorithm": "RS256"
-            }),
+                    "algorithm": "RS256"
+                }),
             "is_admin": isAdmin.rows[0].is_admin
         }
     } else {
@@ -255,7 +258,7 @@ exports.addPolygons = function* addPolygons(featCol, eventId) {
     if (featCol.features[0] && featCol.features[0].geometry.type == "MultiPolygon") {
         isMulti = true
     }
-    var result = yield featCol.features.map(function(feat) {
+    var result = yield featCol.features.map(function (feat) {
         feat.geometry["crs"] = {
             "type": "name",
             "properties": {
@@ -278,7 +281,7 @@ exports.addPolygons = function* addPolygons(featCol, eventId) {
     var queryString = util.format(`SELECT ST_AsGeoJSON(ST_Centroid(ST_Union(%s))) AS geometry FROM sites WHERE event_id=%s`, (isMulti) ? "geom_multi" : "geom_poly", eventId)
     var centroidResult = yield db.query(queryString)
     var centroid = JSON.parse(centroidResult.rows[0].geometry)
-        //    centroidResult.rows[0].geometry.crs = {"type":"name","properties":{"name":"EPSG:4326"}}
+    //    centroidResult.rows[0].geometry.crs = {"type":"name","properties":{"name":"EPSG:4326"}}
     console.log(centroid.coordinates)
 
     queryString = util.format(`UPDATE events SET centroid=ST_GeomFromText('POINT(%s %s)', 4326) WHERE id=%s`, centroid.coordinates[1], centroid.coordinates[0], eventId)
@@ -348,8 +351,8 @@ exports.createUser = function* createUser(username, password, email, firstName, 
         var token = jwt.sign({
             "username": username
         }, privateKey, {
-            "algorithm": "RS256"
-        })
+                "algorithm": "RS256"
+            })
     } catch (e) {
         userId = null
         message = e

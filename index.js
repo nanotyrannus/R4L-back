@@ -1,18 +1,18 @@
 'use strict'
 
-var koa         = require('koa')
-var cors        = require("koa-cors")
-var config      = require('./config')
-var bodyParser  = require('koa-bodyparser')
-var services    = require('./services')
-var co          = require('co')
-var session     = require("koa-session")
-var fs          = require("fs")
-var jwt         = require("koa-jwt")
-var adminRoutes = require("./routes/admin")
+const koa         = require('koa')
+const cors        = require("koa-cors")
+const config      = require('./config')
+const bodyParser  = require('koa-bodyparser')
+const services    = require('./services')
+const co          = require('co')
+const session     = require("koa-session")
+const fs          = require("fs")
+const jwt         = require("koa-jwt")
+const adminRoutes = require("./routes/admin")
 
 // koa app
-let app = koa()
+const app = koa()
 
 var home = process.env.HOME
 var publicKey = fs.readFileSync(home + "/.ssh/radar.rsa.pub")
