@@ -73,9 +73,9 @@ exports.getEventTotals = function* getEventTotals(eventId) {
 exports.getUserPolygons = function* getUserPolygons(username, eventId) {
     var tableName = util.format("%s_%s_states", username, eventId);
     var queryString = `
-    CREATE TABLE IF NOT EXISTS ${tableName}(
+    CREATE TABLE IF NOT EXISTS ${ tableName }(
     id          integer           not null unique
-    ) INHERITS (_${eventId}_states)`
+    ) INHERITS (_${ eventId }_states)`
 
     yield db.query(queryString)
 
@@ -105,13 +105,41 @@ exports.getUserPolygons = function* getUserPolygons(username, eventId) {
      * Calculate optimal starting point for this user
      */
     queryString = `
-    SELECT ST_AsGeoJSON( ST_Centroid( geom_poly  ) ) AS initial_centroid, ST_AsGeoJSON( ST_Centroid( geom_multi  ) ) AS initial_centroid_multi
-    FROM _${eventId}_sites`
+    SELECT ST_AsGeoJSON( ST_Centroid( geom_poly  ) ) AS initial_centroid,
+    A.id, COALESCE(SUM(B.weight), 0) AS weight
+    FROM _${ eventId }_sites AS A
+    FULL OUTER JOIN _${ eventId }_states AS B
+    ON A.id=B.id
+    GROUP BY B.id, A.id, a.geom_poly
+    ORDER BY A.id`
     
     result.result = yield db.query(queryString)
     var centroids = result.result.rows
+    var maxWeight = 0
+    centroids.forEach(function onEach(element) {
+        if (element.weight > maxWeight) {
+            maxWeight = element.weight
+        }
+    })
+    // totalWeight is the sum of all weights inverted
+    var totalWeight = centroids.reduce(function reducer(accumulator, current) {
+        return accumulator + (maxWeight - Number(current.weight))
+    }, 0)
+    var random = Math.random() * totalWeight
+
     console.log("INITIAL CENTROIDS: ", centroids)
+    console.log(`TOTAL WEIGHT: ${ totalWeight }`)
+    console.log(`MAX WEIGHT: ${ maxWeight }`)
     let randomIndex = Math.floor(centroids.length*Math.random())
+    let threshold = 0
+    for (var i = 0; i < centroids.length; ++i) {
+        threshold += (maxWeight - Number(centroids[i].weight))
+        if (threshold >= random) {
+            randomIndex = i
+            break
+        }
+    } 
+    console.log(`random index: ${ randomIndex }`)
     return {
         "status": status,
         "message": message,
