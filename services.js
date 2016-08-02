@@ -127,9 +127,6 @@ exports.getUserPolygons = function* getUserPolygons(username, eventId) {
     }, 0)
     var random = Math.random() * totalWeight
 
-    console.log("INITIAL CENTROIDS: ", centroids)
-    console.log(`TOTAL WEIGHT: ${ totalWeight }`)
-    console.log(`MAX WEIGHT: ${ maxWeight }`)
     let randomIndex = Math.floor(centroids.length*Math.random())
     let threshold = 0
     for (var i = 0; i < centroids.length; ++i) {
@@ -139,11 +136,17 @@ exports.getUserPolygons = function* getUserPolygons(username, eventId) {
             break
         }
     } 
-    console.log(`random index: ${ randomIndex }`)
+
+    let centroidTable = yield db.query(`
+    SELECT id, properties->'centroid' AS centroid
+    FROM _${ eventId }_sites`)
+    console.log(`Centroid Table: `, centroidTable.rows)
+    
     return {
         "status": status,
         "message": message,
-        "features": result.rows,
+        "features": [], //result.rows,
+        "centroid_table" : centroidTable.rows,
         "initial_centroid": result.result.rows[randomIndex].initial_centroid || result.result.rows[randomIndex].initial_centroid_multi,
         "type": "FeatureCollection"
     }
