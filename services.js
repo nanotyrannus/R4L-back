@@ -483,8 +483,6 @@ exports.init = function* init() { //initialize tables if not exist
                 event_id      integer                       references events(id)
               )`)
 
-    yield db.query(`INSERT INTO events VALUES (100, 'Test') ON CONFLICT DO NOTHING`)
-
     console.log("Initialization done.")
     return
 }

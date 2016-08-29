@@ -4,6 +4,6 @@
   "postgis" : "postgres://ryan:1234@localhost:5432/postgis",
   "postgis_mac" : "postgres://rcconsta@localhost:5432/postgres",
   "aws" : "postgres://node:dendr0bium@localhost:5432/postgres",
-  "local" : "postgres://node@localhost:5432/postgres",
+  "local" : "postgres://ryan:1234@localhost:5432/postgres",
   "debug" : true
 }

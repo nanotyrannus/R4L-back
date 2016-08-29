@@ -20,7 +20,7 @@ module.exports = {
       console.log("db.query called: ", queryString, "\nTime:", timestamp)
     }
 
-    connectionResults = yield pg.connectPromise(config.aws)
+    connectionResults = yield pg.connectPromise(config.local)
     client = connectionResults[0]
     done = connectionResults[1]
 
