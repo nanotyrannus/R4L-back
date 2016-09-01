@@ -1,6 +1,6 @@
 {
   "postgres" : "postgres://ryan:1234@localhost:5432/ryan",
-  "port" : "3000",
+  "port" : "3030",
   "postgis" : "postgres://ryan:1234@localhost:5432/postgis",
   "postgis_mac" : "postgres://rcconsta@localhost:5432/postgres",
   "aws" : "postgres://node:dendr0bium@localhost:5432/postgres",

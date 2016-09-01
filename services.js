@@ -10,6 +10,18 @@ var home = process.env.HOME
 var publicKey = fs.readFileSync(home + "/.ssh/radar.rsa.pub")
 var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
 
+function createToken(username) {
+    return jwt.sign(
+        {
+            "username": username
+        },
+        privateKey,
+        {
+            "algorithm": "RS256",
+            "expiresIn" : "8h"
+        }
+    )
+}
 
 exports.isAdmin = function* isAdmin(userIdentifier) {
     var queryString = util.format(`
@@ -17,7 +29,7 @@ exports.isAdmin = function* isAdmin(userIdentifier) {
     FROM admins AS a
     INNER JOIN users AS b
     ON a.username=b.username
-    WHERE b.username='${ userIdentifier }' OR b.email='${ userIdentifier }'`)
+    WHERE b.username='${ userIdentifier}' OR b.email='${userIdentifier}'`)
 
     var queryResult = yield db.query(queryString)
     return queryResult.rows[0].is_admin
@@ -26,7 +38,7 @@ exports.isAdmin = function* isAdmin(userIdentifier) {
 exports.getEventTotals = function* getEventTotals(eventId) {
     var queryString = `
     SELECT id, status, count(status) AS integer_count, SUM(weight) AS count 
-    FROM _${ eventId }_states 
+    FROM _${ eventId}_states 
     GROUP BY id, status`
 
     try {
@@ -73,9 +85,9 @@ exports.getEventTotals = function* getEventTotals(eventId) {
 exports.getUserPolygons = function* getUserPolygons(username, eventId) {
     var tableName = util.format("%s_%s_states", username, eventId);
     var queryString = `
-    CREATE TABLE IF NOT EXISTS ${ tableName }(
+    CREATE TABLE IF NOT EXISTS ${ tableName}(
     id          integer           not null unique
-    ) INHERITS (_${ eventId }_states)`
+    ) INHERITS (_${ eventId}_states)`
 
     yield db.query(queryString)
 
@@ -107,12 +119,12 @@ exports.getUserPolygons = function* getUserPolygons(username, eventId) {
     queryString = `
     SELECT ST_AsGeoJSON( ST_Centroid( geom_poly  ) ) AS initial_centroid,
     A.id, COALESCE(SUM(B.weight), 0) AS weight
-    FROM _${ eventId }_sites AS A
-    FULL OUTER JOIN _${ eventId }_states AS B
+    FROM _${ eventId}_sites AS A
+    FULL OUTER JOIN _${ eventId}_states AS B
     ON A.id=B.id
     GROUP BY B.id, A.id, a.geom_poly
     ORDER BY A.id`
-    
+
     result.result = yield db.query(queryString)
     var centroids = result.result.rows
     var maxWeight = 0
@@ -127,7 +139,7 @@ exports.getUserPolygons = function* getUserPolygons(username, eventId) {
     }, 0)
     var random = Math.random() * totalWeight
 
-    let randomIndex = Math.floor(centroids.length*Math.random())
+    let randomIndex = Math.floor(centroids.length * Math.random())
     let threshold = 0
     for (var i = 0; i < centroids.length; ++i) {
         threshold += (maxWeight - Number(centroids[i].weight))
@@ -135,28 +147,28 @@ exports.getUserPolygons = function* getUserPolygons(username, eventId) {
             randomIndex = i
             break
         }
-    } 
+    }
 
     let centroidTable = yield db.query(`
     SELECT id, properties->'centroid' AS centroid
-    FROM _${ eventId }_sites`)
+    FROM _${ eventId}_sites`)
     console.log(`Centroid Table: `, centroidTable.rows)
-    
+
     return {
         "status": status,
         "message": message,
         "features": [], //result.rows,
-        "centroid_table" : centroidTable.rows,
+        "centroid_table": centroidTable.rows,
         "initial_centroid": result.result.rows[randomIndex].initial_centroid || result.result.rows[randomIndex].initial_centroid_multi,
         "type": "FeatureCollection"
     }
 }
 
 exports.getUserPolygonsInArea = function* getUserPolygonsInArea(username, eventId, idList) {
-    var tableName = `${ username }_${ eventId }_states`
-    var queryString = `CREATE TABLE IF NOT EXISTS ${ tableName } (
+    var tableName = `${username}_${eventId}_states`
+    var queryString = `CREATE TABLE IF NOT EXISTS ${tableName} (
     id integer not null unique
-    ) INHERITS (_${ eventId }_states)`
+    ) INHERITS (_${ eventId}_states)`
 
     yield db.query(queryString)
 
@@ -168,10 +180,10 @@ exports.getUserPolygonsInArea = function* getUserPolygonsInArea(username, eventI
       END
     )
     )) AS properties, 'Feature' AS type
-    FROM _${ eventId }_sites AS a
-    FULL OUTER JOIN ${ tableName } AS b ON a.id=b.id`
+    FROM _${ eventId}_sites AS a
+    FULL OUTER JOIN ${ tableName} AS b ON a.id=b.id`
     if (idList) {
-        queryString += ` WHERE a.id IN (${ idList })`
+        queryString += ` WHERE a.id IN (${idList})`
     }
     var result = yield db.query(queryString)
     return result
@@ -213,11 +225,7 @@ exports.authenticateUser = function* authenticateUser(username, password) {
             "success": success,
             "user_id": userId,
             "username": username,
-            "token": jwt.sign({
-                "username": username
-            }, privateKey, {
-                    "algorithm": "RS256"
-                }),
+            "token": createToken(username),
             "is_admin": isAdmin.rows[0].is_admin
         }
     } else {
@@ -232,7 +240,7 @@ exports.authenticateUser = function* authenticateUser(username, password) {
 exports.addEvent = function* addEvent(eventName, description, imageUrl) {
     var queryString = `
     INSERT INTO events (name, description, thumbnail, creation_date)
-    VALUES ('${ eventName }', '${ description }', '${ imageUrl }', NOW())
+    VALUES ('${ eventName}', '${description}', '${imageUrl}', NOW())
     RETURNING id`
     var result
     try {
@@ -265,7 +273,7 @@ exports.addEvent = function* addEvent(eventName, description, imageUrl) {
 }
 
 exports.deleteEvent = function* deleteEvent(eventId) {
-    var queryString = `DELETE FROM events WHERE id=${ eventId }`
+    var queryString = `DELETE FROM events WHERE id=${eventId}`
     try {
         var result = yield db.query(queryString)
     } catch (e) {

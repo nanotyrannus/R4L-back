@@ -38,8 +38,14 @@ co.wrap(function* () {
         yield next
       } catch (e) {
         if (e.name === "UnauthorizedError") {
+          /**
+           * If there is a body, echo it back.
+           * Else, send the error message.
+           */
           let body = {}
-          if (ctx.request.body) body = ctx.request.body
+          if (ctx.request.body) {
+            body = ctx.request.body
+          }
           ctx.body = e
           ctx.body.status = 403
         } else {
@@ -53,7 +59,10 @@ co.wrap(function* () {
     app.use(userRoutes.publicRoutes)
     app.use(jwt({
       "secret" : publicKey,
-      "algorithm" : "RS256"
+      "algorithm" : "RS256",
+      "cookie" : "radarforlife_token" 
+      // angular2 seems to ignore Set-Cookie headers.
+      // for now manage webtoken at application level...
     }))
     app.use(function* (next) {
       var ctx = this
@@ -67,7 +76,7 @@ co.wrap(function* () {
     app.use(userRoutes.protectedRoutes)
     app.use(function* (next) {
       var ctx = this
-      console.log("final middleware reached by", ctx.get("x-username"))
+      console.log("User authenticated: ", ctx.get("x-username"))
       if (yield services.isAdmin(ctx.get("x-username"))) {
         yield next
       } else {
@@ -76,7 +85,7 @@ co.wrap(function* () {
     })
     app.use(adminRoutes.routes)
 
-    let port = config.port || process.env.port || 8282
+    let port = config.port
     app.listen(port)
     console.log("App is listenning on port: " + port)
   } catch (e) {
