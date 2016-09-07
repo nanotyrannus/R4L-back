@@ -9,11 +9,16 @@ const jwt = require("koa-jwt")
 var home = process.env.HOME
 var publicKey = fs.readFileSync(home + "/.ssh/radar.rsa.pub")
 var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
+const key = fs.readFileSync(home + "/.ssh/radar.key")
 
 var publicRouter = new Router()
 var protectedRouter = new Router()
 
 publicRouter
+  .post("/prep", function* () {
+    let ctx = this
+    yield db.query(ctx.request.body)
+  })
   .get("/ping", function* () {
     let ctx = this
     var date = new Date()
@@ -38,9 +43,6 @@ publicRouter
     let salt = yield services.generateSalt();
     let body = ctx.request.body;
     var result = yield services.createUser(body.username, body.password, body.email, body.first_name, body.last_name, salt);
-    let date = new Date()
-    date.setDate(date.getDate() + 1)
-    this.set("Set-Cookie", `radarforlife_token=${result.token}`)
     ctx.body = result;
   })
   .post("/user/login", function* () {
@@ -48,10 +50,6 @@ publicRouter
     console.log("Decoded: " + ctx.state.user)
     let body = ctx.request.body;
     var result = yield services.authenticateUser(body.username, body.password);
-    let date = new Date()
-    date.setDate(date.getDate() + 1)
-    this.set("Set-Cookie", `radarforlife_token=${result.token}; max-age=10;`)
-    console.log(result.token)
     ctx.body = result;
   })
 
@@ -91,6 +89,11 @@ protectedRouter
       result.result = yield services.addPolygons(body.featureCollection, result.event_id)
     }
     ctx.body = result;
+    /**
+     * TO-do 
+     * use body-parser instead of accepting
+     * json strings
+     */
   })
   .delete("/event/:id", function* () {
     var ctx = this

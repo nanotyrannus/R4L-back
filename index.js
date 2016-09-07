@@ -6,7 +6,6 @@ const config      = require('./config')
 const bodyParser  = require('koa-bodyparser')
 const services    = require('./services')
 const co          = require('co')
-const session     = require("koa-session")
 const fs          = require("fs")
 const jwt         = require("koa-jwt")
 const adminRoutes = require("./routes/admin")
@@ -17,6 +16,7 @@ const app = koa()
 var home = process.env.HOME
 var publicKey = fs.readFileSync(home + "/.ssh/radar.rsa.pub")
 var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
+const key = fs.readFileSync(home + "/.ssh/radar.key")
 
 
 app.use(cors({
@@ -24,6 +24,7 @@ app.use(cors({
   "methods" : ["GET", "POST", "DELETE"],
   "headers" : ["Content-Type","Authorization", "x-username"]
 }))
+
 app.use(bodyParser({
   "jsonLimit" : "25mb"
 }))
@@ -32,8 +33,11 @@ co.wrap(function* () {
   try {
     //inject postgres client as middleware
     yield services.init()
-    app.use(function *(next) {
+    app.use(function* (next) {
       var ctx = this
+      if (!ctx.body) {
+        ctx.body = {}
+      }
       try {
         yield next
       } catch (e) {
@@ -46,21 +50,23 @@ co.wrap(function* () {
           if (ctx.request.body) {
             body = ctx.request.body
           }
-          ctx.body = e
+          ctx.body = {}
+          ctx.body.message = e.message
           ctx.body.status = 403
+          ctx.status = 403
         } else {
-          throw e
+          console.error(e)
         }
         ctx.body.request = ctx.request.body //echo back request
       }
-      console.log(ctx.state.user)
+      console.log(ctx.headers)
+      console.log(`Line 57`, ctx.state.user)
     })
     let userRoutes = require('./routes/user')
     app.use(userRoutes.publicRoutes)
     app.use(jwt({
-      "secret" : publicKey,
-      "algorithm" : "RS256",
-      "cookie" : "radarforlife_token" 
+      "secret" : key
+      //"cookie" : "radarforlife_token" 
       // angular2 seems to ignore Set-Cookie headers.
       // for now manage webtoken at application level...
     }))

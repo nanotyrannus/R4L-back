@@ -16,8 +16,8 @@ module.exports = {
     var timestamp, connectionResults, client, done, result
 
     if (config.debug) {
-      timestamp = new Date()
-      console.log("db.query called: ", queryString, "\nTime:", timestamp)
+      timestamp = Date.now()
+      console.log("db.query called: ", queryString)
     }
 
     connectionResults = yield pg.connectPromise(config.local)
@@ -34,7 +34,7 @@ module.exports = {
     done();
 
     if (config.debug) {
-      console.log("Done: " + timestamp)
+      console.log(`elapsed: ${ Date.now() - timestamp }`)
     }
 
     return result

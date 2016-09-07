@@ -9,17 +9,14 @@ const fs = require("fs")
 var home = process.env.HOME
 var publicKey = fs.readFileSync(home + "/.ssh/radar.rsa.pub")
 var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
+const key = fs.readFileSync(home + "/.ssh/radar.key")
 
 function createToken(username) {
     return jwt.sign(
         {
             "username": username
         },
-        privateKey,
-        {
-            "algorithm": "RS256",
-            "expiresIn" : "8h"
-        }
+        key
     )
 }
 
@@ -85,9 +82,10 @@ exports.getEventTotals = function* getEventTotals(eventId) {
 exports.getUserPolygons = function* getUserPolygons(username, eventId) {
     var tableName = util.format("%s_%s_states", username, eventId);
     var queryString = `
-    CREATE TABLE IF NOT EXISTS ${ tableName}(
-    id          integer           not null unique
-    ) INHERITS (_${ eventId}_states)`
+    CREATE TABLE IF NOT EXISTS ${ tableName } (
+        id          integer           not null unique
+    ) INHERITS (_${ eventId}_states)
+    `
 
     yield db.query(queryString)
 
@@ -218,6 +216,7 @@ exports.authenticateUser = function* authenticateUser(username, password) {
         } else {
             userId = null
             message = "Unable to authenticate with supplied credentials."
+            status = 422 //422 unprocessable entity
         }
         return {
             "status": status,
@@ -226,7 +225,8 @@ exports.authenticateUser = function* authenticateUser(username, password) {
             "user_id": userId,
             "username": username,
             "token": createToken(username),
-            "is_admin": isAdmin.rows[0].is_admin
+            "is_admin": isAdmin.rows[0].is_admin,
+            "expires_in": 8 * 60 * 60 * 1000 // 8 hours in milliseconds
         }
     } else {
         return {
@@ -386,11 +386,8 @@ exports.createUser = function* createUser(username, password, email, firstName, 
         var message = null
         var status = 200
         var success = true
-        var token = jwt.sign({
-            "username": username
-        }, privateKey, {
-                "algorithm": "RS256"
-            })
+        var token = createToken(username)
+        var expiresIn = 8 * 60 * 60
     } catch (e) {
         userId = null
         message = e
@@ -404,7 +401,8 @@ exports.createUser = function* createUser(username, password, email, firstName, 
         "user_id": userId,
         "username": username,
         "success": success,
-        "token": token
+        "token": token,
+        "expires_in": expiresIn
     };
 }
 
@@ -451,45 +449,55 @@ exports.generateSalt = function* generateSalt() {
 }
 
 exports.init = function* init() { //initialize tables if not exist
-    yield db.query(`CREATE TABLE IF NOT EXISTS states (
-                status      text                    not null unique
-              )`)
+    yield db.query(`
+        CREATE TABLE IF NOT EXISTS states (
+            status              text                not null unique
+        )
+    `)
 
     yield db.query(`INSERT INTO states VALUES ('DAMAGE'),('NO_DAMAGE'),('UNSURE'),('NOT_EVALUATED') ON CONFLICT DO NOTHING`)
 
-    yield db.query(`CREATE TABLE IF NOT EXISTS users (
-                id            serial primary key            not null unique,
-                username      text                          not null unique,
-                email         text                          not null unique,
-                first_name    text                          not null,
-                last_name     text                          not null,
-                hash          text                          not null,
-                salt          text                          not null,
-                weight        numeric(10, 5)                not null DEFAULT 1.00
-              )`)
+    yield db.query(`
+        CREATE TABLE IF NOT EXISTS users (
+            id            serial primary key            not null unique,
+            username      text                          not null unique,
+            email         text                          not null unique,
+            first_name    text                          not null,
+            last_name     text                          not null,
+            hash          text                          not null,
+            salt          text                          not null,
+            weight        numeric(10, 5)                not null DEFAULT 1.00
+        )
+    `)
 
-    yield db.query(`CREATE TABLE IF NOT EXISTS admins (
-                username      text                          references users(username)
-              )`)
+    yield db.query(`
+        CREATE TABLE IF NOT EXISTS admins (
+            username      text                          references users(username)
+        )
+    `)
 
-    yield db.query(`CREATE TABLE IF NOT EXISTS events (
-                id            serial                        not null unique,
-                name          text                          not null unique,
-                description   text,
-                thumbnail     text,
-                creation_date date,
-                centroid      geometry(Point, 4326),
-                site_count    integer
-              )`)
+    yield db.query(`
+        CREATE TABLE IF NOT EXISTS events (
+            id            serial                        not null unique,
+            name          text                          not null unique,
+            description   text,
+            thumbnail     text,
+            creation_date date,
+            centroid      geometry(Point, 4326),
+            site_count    integer
+        )
+    `)
 
-    yield db.query(`CREATE TABLE IF NOT EXISTS sites (
-                id            integer                       not null,
-                pos           integer                       not null,
-                geom_poly     geometry(Polygon, 4326),
-                geom_multi    geometry(MultiPolygon, 4326),
-                properties    JSONB,
-                event_id      integer                       references events(id)
-              )`)
+    yield db.query(`
+        CREATE TABLE IF NOT EXISTS sites (
+            id            integer                       not null,
+            pos           integer                       not null,
+            geom_poly     geometry(Polygon, 4326),
+            geom_multi    geometry(MultiPolygon, 4326),
+            properties    JSONB,
+            event_id      integer                       references events(id)
+        )
+    `)
 
     console.log("Initialization done.")
     return
