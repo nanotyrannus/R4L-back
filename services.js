@@ -78,6 +78,20 @@ exports.getEventTotals = function* getEventTotals(eventId) {
     }
 }
 
+exports.getPolygonList = function* (eventId) {
+    var result = yield db.query(`
+        SELECT id, pos, properties->'centroid' AS centroid FROM _${ eventId }_sites
+    `)
+
+    return result.rows
+}
+
+exports.getInitialPolygon = function* getInitialPolygon(eventId) {
+
+}
+
+// Need to make system to make username equivalent to email?
+// Check if client-side handle is always 'username'
 // Get polygons with user status
 exports.getUserPolygons = function* getUserPolygons(username, eventId) {
     var tableName = util.format("%s_%s_states", username, eventId);
@@ -162,6 +176,7 @@ exports.getUserPolygons = function* getUserPolygons(username, eventId) {
     }
 }
 
+// Really "get user polygons by id"s
 exports.getUserPolygonsInArea = function* getUserPolygonsInArea(username, eventId, idList) {
     var tableName = `${username}_${eventId}_states`
     var queryString = `CREATE TABLE IF NOT EXISTS ${tableName} (
@@ -269,6 +284,18 @@ exports.addEvent = function* addEvent(eventName, description, imageUrl) {
         "success": true,
         "event_id": result.rows[0].id,
         "event_name": eventName
+    }
+}
+
+exports.setEventMetaData = function* setEventMetaData(request) {
+    // Check if event exists
+    let ctx = this
+    try {
+        var result = yield db.query(request.eventId)
+    } catch (e) {
+        ctx.body.status = ctx.status = 401
+        ctx.body = e
+        return
     }
 }
 

@@ -1,6 +1,6 @@
 /**
-* a form that is digestable by the app
 * This is a utility for converting FeatureCollections into
+* a form that is digestable by the app
 */
 
 var fs = require('fs')
@@ -20,24 +20,24 @@ try {
 
 o = JSON.parse(fileName.toString())
 o.features[0].properties.Description = ""
-debugger;
+// debugger;
 var flattened = new Array()
-o.features.forEach(function(feat){
-  var geom=feat.geometry;
-  var props=feat.properties;
-  if (geom.type === 'MultiPolygon'){
-    for (var i=0; i < geom.coordinates.length; i++){
+o.features.forEach(function (feat) {
+  var geom = feat.geometry;
+  var props = feat.properties;
+  if (geom.type === 'MultiPolygon') {
+    for (var i = 0; i < geom.coordinates.length; i++) {
       var polygon = {
-        'type':'Polygon',
-        'coordinates':geom.coordinates[i],
+        'type': 'Polygon',
+        'coordinates': geom.coordinates[i],
       };
       polygon.coordinates[i].forEach(function (elm) {
-        elm.splice(2,1)
+        elm.splice(2, 1)
       })
       var feature = {
-        "properties" : {},
-        "type" : "Feature",
-        "geometry" : polygon
+        "properties": {},
+        "type": "Feature",
+        "geometry": polygon
       }
       flattened.push(feature)
     }
@@ -64,26 +64,26 @@ o.features.forEach(function (feature, idx) {
     //console.log("current:", cur)
 
     return prev
-  }, {minLat: 90, minLng: 180, maxLat: -90, maxLng: -180})
+  }, { minLat: 90, minLng: 180, maxLat: -90, maxLng: -180 })
   //console.log("Bounding box: ", box)
   feature.id = idx
   feature.properties.name = idx
   feature.properties.boundingBox = [box.minLng, box.maxLng, box.minLat, box.maxLat]
   feature.properties.centroid = {
-    "lng" : (box.maxLng + box.minLng) / 2,
-    "lat" : (box.maxLat + box.minLat) / 2
+    "lng": (box.maxLng + box.minLng) / 2,
+    "lat": (box.maxLat + box.minLat) / 2
   }
   /*
   = {
   "name" : idx //placeholder
 }
 */
-feature.geometry.crs = {
-  "type" : "name",
-  "properties" : {
-    "name" : "EPSG:4326"
+  feature.geometry.crs = {
+    "type": "name",
+    "properties": {
+      "name": "EPSG:4326"
+    }
   }
-}
 })
 // o.features.forEach(function (feature) {
 //         feature.geometry.coordinates[0][0].forEach(function (elm) {

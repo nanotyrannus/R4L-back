@@ -38,5 +38,30 @@ module.exports = {
     }
 
     return result
+  },
+  "Transaction" : function* () {
+    var connectionResults = yield pg.connectPromise(config.local)
+    var client = connectionResults[0]
+    var done = connectionResults[1]
+
+    return {
+      "begin" : function* () {
+        yield client.queryPromise('BEGIN')
+      },
+      "query" : function* (queryString) {
+        var result = null
+        try {
+          result = yield client.queryPromise(queryString)
+        } catch (e) {
+          yield client.queryPromise(`ROLLBACK`)
+          throw e
+        }
+        return result
+      },
+      "done" : function* () {
+        yield client.queryPromise(`COMMIT`)
+        done()
+      }
+    }
   }
 }

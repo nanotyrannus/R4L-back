@@ -12,5 +12,15 @@ router
     var ctx = this
     this.body = "You're an admin!"
   })
+  .delete("/event/:id", function* () {
+    var ctx = this
+    var id = number(ctx.params.id)
+    var result = yield db.query(`
+      BEGIN;
+      DROP TABLE _${ id }_sites, _${ id }_states;
+      DELETE FROM events WHERE id=${ id };
+      COMMIT;
+    `)
+  })
 
 module.exports.routes = router.routes()
