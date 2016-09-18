@@ -110,22 +110,25 @@ protectedRouter
     // console.log(file)
     this.body = {}
     try {
-      let newFilePath = `${os.homedir()}/radarforlife/events/${file.name}`
-      if (yield cofs.exists(newFilePath)) {
-        throw new Error(`Filename already exists: ${file.name}`)
-      }
-      yield cofs.rename(this.request.body.files.file.path, newFilePath) //move to events folder
-      let localFile = yield cofs.readFile(newFilePath)
+      //let newFilePath = `${os.homedir()}/radarforlife/events/${file.name}`
+
+      // if (yield cofs.exists(newFilePath)) {
+      //   throw new Error(`Filename already exists: ${ file.name }`)
+      // }
+      // yield cofs.rename(this.request.body.files.file.path, newFilePath) //move to events folder
+      let localFile = yield cofs.readFile(file.path)
       let parsedLocalFile = JSON.parse(localFile.toString("utf-8"))
 
       // Add to database with filename as temp eventName
       let result = yield services.addEvent(file.name, "No description.", "")
       if (result.success) {
         yield services.addPolygons(parsedLocalFile, result.event_id)
+        cofs.unlink(file.path)
       }
     } catch (e) {
       this.status = this.body.status = 500
       this.body.message = e
+      console.error(e)
     }
 
     // let ctx = this

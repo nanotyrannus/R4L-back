@@ -253,13 +253,15 @@ exports.authenticateUser = function* authenticateUser(username, password) {
 }
 
 exports.addEvent = function* addEvent(eventName, description, imageUrl) {
+    var client = yield db.Transaction()
+    client.begin()
     var queryString = `
     INSERT INTO events (name, description, thumbnail, creation_date)
     VALUES ('${ eventName}', '${description}', '${imageUrl}', NOW())
     RETURNING id`
     var result
     try {
-        result = yield db.query(queryString)
+        result = yield client.query(queryString)
         console.log(result)
         queryString = util.format(`
       CREATE TABLE _%s_states(
@@ -270,15 +272,17 @@ exports.addEvent = function* addEvent(eventName, description, imageUrl) {
         yield db.query(queryString)
 
         queryString = util.format(`CREATE TABLE _%s_sites() INHERITS (sites)`, result.rows[0].id)
-        yield db.query(queryString)
+        yield client.query(queryString)
 
     } catch (e) {
+        console.log(`errored: `, e)
         return {
             "status": 401,
             "success": false,
             "message": e,
         }
     }
+    client.done()
     return {
         "status": 200,
         "success": true,
@@ -506,23 +510,25 @@ exports.init = function* init() { //initialize tables if not exist
     yield db.query(`
         CREATE TABLE IF NOT EXISTS events (
             id            serial                        not null unique,
-            name          text                          not null unique,
+            name          text                          not null,
             description   text,
             thumbnail     text,
             creation_date date,
             centroid      geometry(Point, 4326),
-            site_count    integer
+            site_count    integer,
+            bbox          geometry(Geometry, 4326)      
         )
     `)
 
     yield db.query(`
         CREATE TABLE IF NOT EXISTS sites (
-            id            integer                       not null,
-            pos           integer                       not null,
+            id            integer                       
+            pos           integer                       
             geom_poly     geometry(Polygon, 4326),
             geom_multi    geometry(MultiPolygon, 4326),
             properties    JSONB,
-            event_id      integer                       references events(id)
+            event_id      integer                       references events(id),
+            bbox          geometry(Polygon, 4326)
         )
     `)
 

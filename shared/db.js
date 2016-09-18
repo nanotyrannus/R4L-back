@@ -54,8 +54,10 @@ module.exports = {
           result = yield client.queryPromise(queryString)
         } catch (e) {
           yield client.queryPromise(`ROLLBACK`)
+          console.log(`Rolled back:\n${ queryString }`)
           throw e
         }
+        console.log(`TRANSACTION: `, result)
         return result
       },
       "done" : function* () {

@@ -15,12 +15,15 @@ router
   .delete("/event/:id", function* () {
     var ctx = this
     var id = number(ctx.params.id)
-    var result = yield db.query(`
-      BEGIN;
-      DROP TABLE _${ id }_sites, _${ id }_states;
-      DELETE FROM events WHERE id=${ id };
-      COMMIT;
-    `)
+    try {
+    var transaction = yield db.Transaction()
+    yield transaction.begin()
+    yield transaction.query(`DROP TABLE _${ id }_sites, _${ id }_states`)
+    var result = yield transaction.done()
+    } catch (e) {
+      console.error(e)
+    }
+    return result 
   })
 
 module.exports.routes = router.routes()
