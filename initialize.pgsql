@@ -1,36 +1,47 @@
-CREATE TYPE damage_level AS ENUM ('damage', 'no_damage', 'unsure', 'not_evaluated');
+-- CREATE TYPE damage_level AS ENUM ('damage', 'no_damage', 'unsure', 'not_evaluated');
 
-CREATE TABLE app_user(
+CREATE TABLE IF NOT EXISTS app_user(
     first_name      TEXT                            NOT NULL,
     last_name       TEXT                            NOT NULL,
-    username        TEXT                            NOT NULL,
-    email           TEXT                            NOT NULL,
+    username        TEXT                            NOT NULL UNIQUE,
+    email           TEXT                            NOT NULL UNIQUE,
     hash            TEXT                            NOT NULL,
     salt            TEXT                            NOT NULL,
-    is_admin        BOOLEAN                         DEFAULT FALSE
+    id                                              SERIAL UNIQUE,
+    is_admin        BOOLEAN                         DEFAULT FALSE,
+    weight          FLOAT8                          DEFAULT 1.0
 );
 
-CREATE TABLE event(
-    id              SERIAL,
+CREATE TABLE IF NOT EXISTS event(
+    id                                              SERIAL UNIQUE,
     name            TEXT                            NOT NULL,
     description     TEXT,
     thumbnail       TEXT,
     creation_date   DATE,
-    centroid        GEOMETRY(POINT, 4326),
+    start_date      DATE,
+    end_date        DATE,
     site_count      INTEGER,
+    centroid        GEOMETRY(POINT, 4326),
     bbox            GEOMETRY(POLYGON, 4326)       
 );
 
-CREATE TABLE site(
+CREATE TABLE IF NOT EXISTS site(
     event_id        INTEGER                         REFERENCES event(id),
     polygon_id      INTEGER                         NOT NULL,
-    id              SERIAL                          NOT NULL
+    polygon         GEOMETRY(POLYGON, 4326)         NOT NULL,
+    bbox            GEOMETRY(POLYGON, 4326),
+    centroid        GEOMETRY(POINT, 4326),
+    properties      JSONB,
+    id              SERIAL                          NOT NULL UNIQUE
 ); 
 
-CREATE TABLE site_vote(
-    username        TEXT                            REFERENCES app_user(username),
+CREATE TABLE IF NOT EXISTS site_vote(
+    user_id         INTEGER                         REFERENCES app_user(id),
     site_id         INTEGER                         REFERENCES site(id),
-    vote            ENUM                            DEFAULT 'not_evaluated'
+    vote            damage_level                    DEFAULT 'not_evaluated',
+    weight          FLOAT8                          NOT NULL,
+    vote_time       TIMESTAMP                       DEFAULT NOW(),
+    PRIMARY KEY (user_id, site_id)
 );
 
 -- CREATE OR REPLACE FUNCTION drop_tables_by_wildcard(IN _schema TEXT, IN _parttionbase TEXT) 

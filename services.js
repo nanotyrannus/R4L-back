@@ -21,14 +21,21 @@ function createToken(username) {
 }
 
 exports.isAdmin = function* isAdmin(userIdentifier) {
-    var queryString = util.format(`
-    SELECT COUNT(*) > 0 AS is_admin
-    FROM admins AS a
-    INNER JOIN users AS b
-    ON a.username=b.username
-    WHERE b.username='${ userIdentifier}' OR b.email='${userIdentifier}'`)
+    // var queryString = util.format(`
+    // SELECT COUNT(*) > 0 AS is_admin
+    // FROM admins AS a
+    // INNER JOIN users AS b
+    // ON a.username=b.username
+    // WHERE b.username='${ userIdentifier}' OR b.email='${userIdentifier}'`)
 
-    var queryResult = yield db.query(queryString)
+    var queryResult = yield db.query({
+        'text' : `
+            SELECT is_admin
+            FROM app_user
+            WHERE username=$1 OR email=$1
+        `,
+        values : [userIdentifier]
+    })
     return queryResult.rows[0].is_admin
 }
 
@@ -79,9 +86,18 @@ exports.getEventTotals = function* getEventTotals(eventId) {
 }
 
 exports.getPolygonList = function* (eventId) {
-    var result = yield db.query(`
-        SELECT id, pos, properties->'centroid' AS centroid FROM _${ eventId }_sites
-    `)
+    // var result = yield db.query(`
+    //     SELECT id, pos, properties->'centroid' AS centroid FROM _${ eventId}_sites
+    // `)
+    var result = yield db.query({
+        'name': "get_polygon_list",
+        'text': `
+            SELECT polygon_id AS id, ST_x(centroid) AS lng, ST_y(centroid) AS lat
+            FROM site
+            WHERE event_id=$1
+        `,
+        'values': [eventId]
+    })
 
     return result.rows
 }
@@ -96,7 +112,7 @@ exports.getInitialPolygon = function* getInitialPolygon(eventId) {
 exports.getUserPolygons = function* getUserPolygons(username, eventId) {
     var tableName = util.format("%s_%s_states", username, eventId);
     var queryString = `
-    CREATE TABLE IF NOT EXISTS ${ tableName } (
+    CREATE TABLE IF NOT EXISTS ${ tableName} (
         id          integer           not null unique
     ) INHERITS (_${ eventId}_states)
     `
@@ -202,24 +218,109 @@ exports.getUserPolygonsInArea = function* getUserPolygonsInArea(username, eventI
     return result
 }
 
-exports.getUserPolygonIdsInArea = function* getUserPolygonIdsInArea(username, eventId, bounds) {
-    var queryString = `
-  SELECT id FROM _${eventId}_sites
-  WHERE geom_poly &&
-  ST_Transform(ST_MakeEnvelope(${bounds.minLng}, ${bounds.minLat}, ${bounds.maxLng}, ${bounds.maxLat}, 4326), 4326)`
-    var result = yield db.query(queryString)
-    console.log(`from services.getUserPolygonsInArea ~~~`)
-    return result.rows
+exports.getUserId = function* getUserById(userHandle) {
+    var result = yield db.query({
+        'name': "get_user_id",
+        'text': `
+                SELECT id
+                FROM app_user
+                WHERE username=$1 OR email=$1
+            `,
+        'values': [userHandle]
+    })
+    return result.rows[0].id || null
 }
 
-exports.authenticateUser = function* authenticateUser(username, password) {
-    var queryString = util.format("SELECT id, hash = crypt('%s', salt) AS is_match from users where username='%s' OR email='%s'", password, username, username)
+// exports.getPolygonsById = function* getPolygonsById(userHandle, eventId, polygonIds) {
+//     var userId = yield exports.getUserId(userHandle)
+//     polygonIds = polygonIds.map(function mapper(element) {
+//         return Number(element)
+//     })
+//     var result = yield db.query({
+//         'text': `
+//             SELECT ST_AsGeoJSON(polygon), polygon_id AS id
+//             FROM site
+//             WHERE site.polygon_id in (${ polygonIds.join(', ')}) AND site.event_id=$1
+//         `,
+//         'values': [eventId]
+//     })
+//     return result.rows
+// }
+
+exports.getPolygonsById = function* getPolygonsById(userHandle, eventId, polygonIds) {
+    var userId = yield exports.getUserId(userHandle)
+    polygonIds = polygonIds.map(function mapper(element) {
+        let number = Number(element)
+        if (isNaN(number)) {
+            throw new Error(`Invalid polygon ID: ${ number }`)
+        } else {
+            return number
+        }
+    })
+    var result = yield db.query({
+        'text': `
+            SELECT ST_AsGeoJSON(polygon) AS geometry_json, polygon_id AS id, COALESCE(vote, 'not_evaluated'::damage_level) AS vote
+            FROM site
+            LEFT OUTER JOIN site_vote
+            ON site.id=site_vote.site_id
+            WHERE site.polygon_id in (${ polygonIds.join(', ')}) AND site.event_id=$1
+            ORDER BY id
+        `,
+        'values': [eventId]
+    })
+    return {
+        'polygons' : result.rows,
+        'status' : 200
+    }
+}
+
+exports.setPolygonVote = function* setPolygonVote(userHandle, eventId, polygonId, vote) {
+    var status = 200
+    var userId = yield exports.getUserId(userHandle)
+    var weight = yield exports.getUserWeight(userHandle)
+    var siteId = (yield db.query({
+        'text': `
+            SELECT id
+            FROM site
+            WHERE event_id=$1 AND polygon_id=$2
+        `, 'values': [eventId, polygonId]
+    })).rows[0].id
+    var result = yield db.query({
+        'text': `
+            INSERT INTO site_vote (user_id, site_id, vote, weight)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (user_id, site_id)
+            DO UPDATE SET vote = $3, vote_time = NOW()
+        `,
+        'values': [userId, siteId, vote, weight]
+    })
+    return result
+}
+
+exports.getUserWeight = function* getUserWeigh(userHandle) {
+    var result = yield db.query({
+        'text': `
+            SELECT weight
+            FROM app_user
+            WHERE username=$1 OR email=$1
+        `,
+        'values': [userHandle]
+    })
+    return result.rows[0].weight
+}
+
+exports.authenticateUser = function* authenticateUser(userHandle, password) {
+    var isAdmin = false, message = null, status = 200, token = null
     try {
-        var result = yield db.query(queryString)
-        queryString = util.format(`select count(*) > 0 as is_admin from admins where username='%s'`, username)
-        var isAdmin = yield db.query(queryString)
-        var message = null
-        var status = 200
+        var result = yield db.query({
+            "name": "authenticate_user",
+            "text": `
+                SELECT id, hash = crypt($1, salt) AS is_match, is_admin, username, first_name
+                FROM app_user
+                WHERE username=$2 OR email=$2
+                `,
+            "values": [password, userHandle]
+        })
     } catch (e) {
         message = e
         status = 401
@@ -227,7 +328,10 @@ exports.authenticateUser = function* authenticateUser(username, password) {
     if (result.rowCount > 0) {
         var success = result.rows[0].is_match
         if (success) {
+            var username = result.rows[0].username
+            var firstName = result.rows[0].first_name
             var userId = result.rows[0].id
+            token = createToken(username) // parameter is shadowed by local username variable
         } else {
             userId = null
             message = "Unable to authenticate with supplied credentials."
@@ -239,8 +343,9 @@ exports.authenticateUser = function* authenticateUser(username, password) {
             "success": success,
             "user_id": userId,
             "username": username,
-            "token": createToken(username),
-            "is_admin": isAdmin.rows[0].is_admin,
+            "first_name": firstName,
+            "token": token,
+            "is_admin": result.rows[0].is_admin,
             "expires_in": 8 * 60 * 60 * 1000 // 8 hours in milliseconds
         }
     } else {
@@ -253,26 +358,38 @@ exports.authenticateUser = function* authenticateUser(username, password) {
 }
 
 exports.addEvent = function* addEvent(eventName, description, imageUrl) {
-    var client = yield db.Transaction()
-    client.begin()
-    var queryString = `
-    INSERT INTO events (name, description, thumbnail, creation_date)
-    VALUES ('${ eventName}', '${description}', '${imageUrl}', NOW())
-    RETURNING id`
+    var transaction = yield db.Transaction()
+    transaction.begin()
+    // var queryString = `
+    // INSERT INTO events (name, description, thumbnail, creation_date)
+    // VALUES ('${ eventName}', '${description}', '${imageUrl}', NOW())
+    // RETURNING id`
     var result
     try {
-        result = yield client.query(queryString)
+        result = yield transaction.query({
+            "name": "event_initialize",
+            "text": `
+                INSERT INTO event (name, description, thumbnail, creation_date)
+                VALUES  ($1, $2, $3, NOW())
+                RETURNING id
+            `,
+            "values": [eventName, description, imageUrl]
+        })
         console.log(result)
-        queryString = util.format(`
-      CREATE TABLE _%s_states(
-        date        timestamp         not null,
-        status      text              not null references states(status) DEFAULT 'NOT_EVALUATED',
-        id          integer           not null unique,
-        weight      numeric(10, 5)    DEFAULT 0.0)`, result.rows[0].id)
-        yield db.query(queryString)
+        //     queryString = util.format(`
+        //   CREATE TABLE _%s_states(
+        //     date        timestamp         not null,
+        //     status      text              not null references states(status) DEFAULT 'NOT_EVALUATED',
+        //     id          integer           not null unique,
+        //     weight      numeric(10, 5)    DEFAULT 0.0)`, result.rows[0].id)
+        //     yield transaction.query({
+        //         "name" : "",
+        //         "text" : ``,
+        //         "values" : []
+        //     })
 
-        queryString = util.format(`CREATE TABLE _%s_sites() INHERITS (sites)`, result.rows[0].id)
-        yield client.query(queryString)
+        // queryString = util.format(`CREATE TABLE _%s_sites() INHERITS (sites)`, result.rows[0].id)
+        // yield client.query(queryString)
 
     } catch (e) {
         console.log(`errored: `, e)
@@ -282,7 +399,7 @@ exports.addEvent = function* addEvent(eventName, description, imageUrl) {
             "message": e,
         }
     }
-    client.done()
+    transaction.done()
     return {
         "status": 200,
         "success": true,
@@ -291,23 +408,39 @@ exports.addEvent = function* addEvent(eventName, description, imageUrl) {
     }
 }
 
-exports.setEventMetaData = function* setEventMetaData(request) {
-    // Check if event exists
-    let ctx = this
-    try {
-        var result = yield db.query(request.eventId)
-    } catch (e) {
-        ctx.body.status = ctx.status = 401
-        ctx.body = e
-        return
-    }
-}
+// exports.setEventMetaData = function* setEventMetaData(request) {
+//     // Check if event exists
+//     let ctx = this
+//     try {
+//         var result = yield db.query(request.eventId)
+//     } catch (e) {
+//         ctx.body.status = ctx.status = 401
+//         ctx.body = e
+//         return
+//     }
+// }
 
 exports.deleteEvent = function* deleteEvent(eventId) {
-    var queryString = `DELETE FROM events WHERE id=${eventId}`
+    // var queryString = `DELETE FROM events WHERE id=${eventId}`
     try {
-        var result = yield db.query(queryString)
+        var transaction = yield db.Transaction()
+        transaction.start()
+        yield transaction.query({
+            'text' : `
+                DELETE FROM event 
+                WHERE id=$1
+            `,
+            'values' : [eventId]
+        })
+        yield transaction.query({
+            'text' : `
+                DELETE FROM site 
+                WHERE event_id=$1 
+            `, 'values' : [eventId]
+        })
+        yield transaction.done()
     } catch (e) {
+        yield transaction.done()
         return {
             "status": 401,
             "success": false,
@@ -316,51 +449,129 @@ exports.deleteEvent = function* deleteEvent(eventId) {
     }
     return {
         "status": 200,
-        "success": (result.rowCount > 0) ? true : false
+        "success": true
     }
+}
+
+exports.setEventMetaData = function* setEventMetaData(eventId) {
+    yield db.query({
+        "name": "evaluate_polygon_properties",
+        "text": `
+            UPDATE site
+            SET bbox=ST_Envelope(polygon), centroid=ST_Centroid(polygon)
+            WHERE event_id=$1
+        `,
+        "values": [eventId]
+    })
+    yield db.query({
+        "name": "evaluate_event_bounding_box",
+        "text": `
+            UPDATE event
+            SET bbox=(
+                SELECT ST_Setsrid(ST_Extent(polygon), 4326)
+                FROM site
+                WHERE event_id=$1
+                LIMIT 1
+            )
+            WHERE id=$2
+        `,
+        "values": [eventId, eventId]
+    })
+    yield db.query({
+        'name': "evaluate_event_centroid",
+        'text': `
+            UPDATE event
+            SET centroid=ST_Centroid(bbox)
+            WHERE id=$1
+        `,
+        'values': [eventId]
+    })
+    yield db.query({
+        'name': "generate_event_thumbnail",
+        'text': `
+            UPDATE event
+            SET thumbnail='https://maps.googleapis.com/maps/api/staticmap?center=' || ST_Y(centroid) || ',' || ST_X(centroid) || '&zoom=7&size=500x500&key=AIzaSyBVZTV9TU1NpITTB1ar5awvfr1BR1OKvlA'
+            WHERE id=$1
+        `,
+        'values': [eventId]
+    })
+    //var thumbnail = "https://maps.googleapis.com/maps/api/staticmap?center=" + centroid.coordinates[1] + "," + centroid.coordinates[0] + "&zoom=7&size=500x500&key=AIzaSyBVZTV9TU1NpITTB1ar5awvfr1BR1OKvlA"
 }
 
 exports.addPolygons = function* addPolygons(featCol, eventId) {
     // Yielding an array of promises does not guarantee sequential evaluation
     // check if feature-collection is of polygons or multi-polygons
-    var isMulti = false
-    if (featCol.features[0] && featCol.features[0].geometry.type == "MultiPolygon") {
-        isMulti = true
-    }
+    // var isMulti = false
+    // if (featCol.features[0] && featCol.features[0].geometry.type == "MultiPolygon") {
+    //     isMulti = true
+    // }
+    var transaction = yield db.Transaction()
+    transaction.begin()
     var result = yield featCol.features.map(function (feat) {
-        feat.geometry["crs"] = {
-            "type": "name",
-            "properties": {
-                "name": "EPSG:4326"
-            }
-        }
-        let queryString = util.format(`
-          INSERT INTO _%s_sites (id, pos, %s, properties, event_id)
-          VALUES (%s, %s, ST_GeomFromGeoJSON('%s'), '%s', %s)`,
-            eventId,
-            (isMulti) ? "geom_multi" : "geom_poly",
-            feat.id,
-            feat.properties.name,
-            JSON.stringify(feat.geometry),
-            JSON.stringify(feat.properties),
-            eventId)
-        return db.query(queryString.replace(/\n/, ""))
+        // feat.geometry["crs"] = {
+        //     "type": "name",
+        //     "properties": {
+        //         "name": "EPSG:4326"
+        //     }
+        // }
+        // let queryString = util.format(`
+        //   INSERT INTO _%s_sites (id, pos, %s, properties, event_id)
+        //   VALUES (%s, %s, ST_GeomFromGeoJSON('%s'), '%s', %s)`,
+        //     eventId,
+        //     (isMulti) ? "geom_multi" : "geom_poly",
+        //     feat.id,
+        //     feat.properties.name,
+        //     JSON.stringify(feat.geometry),
+        //     JSON.stringify(feat.properties),
+        //     eventId)
+        return transaction.query({
+            "name": "insert_polygon",
+            "text": `
+                INSERT INTO site (event_id, polygon_id, polygon, properties)
+                VALUES ($1, $2, ST_GeomFromGeoJSON($3), $4)
+            `,
+            "values": [eventId, feat.id, JSON.stringify(feat.geometry), JSON.stringify(feat.properties)]
+        }, false)
     })
+    /*
+        yield transaction.query({
+            "name" : "evaluate_polygon_properties",
+            "text" : `
+                UPDATE site
+                SET bbox=ST_Envelope(polygon), centroid=ST_Centroid(polygon)
+                WHERE id=$1
+            `,
+            "values" : [eventId]
+        })
+        yield transaction.query({
+            "name" : "evaluate_event_properties",
+            "text" : `
+                UPDATE event
+                SET bbox=(
+                    SELECT ST_Setsrid(ST_Extent(polygon), 4326)
+                    FROM site
+                    WHERE event_id=$1
+                    LIMIT 1
+                )
+                WHERE id=$2
+            `,
+            "values" : [eventId, eventId]
+        })
+        */
+    // var queryString = util.format(`SELECT ST_AsGeoJSON(ST_Centroid(ST_Union(%s))) AS geometry FROM sites WHERE event_id=%s`, (isMulti) ? "geom_multi" : "geom_poly", eventId)
+    // var centroidResult = yield db.query(queryString)
+    // var centroid = JSON.parse(centroidResult.rows[0].geometry)
+    // //    centroidResult.rows[0].geometry.crs = {"type":"name","properties":{"name":"EPSG:4326"}}
+    // console.log(centroid.coordinates)
 
-    var queryString = util.format(`SELECT ST_AsGeoJSON(ST_Centroid(ST_Union(%s))) AS geometry FROM sites WHERE event_id=%s`, (isMulti) ? "geom_multi" : "geom_poly", eventId)
-    var centroidResult = yield db.query(queryString)
-    var centroid = JSON.parse(centroidResult.rows[0].geometry)
-    //    centroidResult.rows[0].geometry.crs = {"type":"name","properties":{"name":"EPSG:4326"}}
-    console.log(centroid.coordinates)
+    // queryString = util.format(`UPDATE events SET centroid=ST_GeomFromText('POINT(%s %s)', 4326) WHERE id=%s`, centroid.coordinates[1], centroid.coordinates[0], eventId)
+    // yield db.query(queryString)
 
-    queryString = util.format(`UPDATE events SET centroid=ST_GeomFromText('POINT(%s %s)', 4326) WHERE id=%s`, centroid.coordinates[1], centroid.coordinates[0], eventId)
-    yield db.query(queryString)
+    // var thumbnail = "https://maps.googleapis.com/maps/api/staticmap?center=" + centroid.coordinates[1] + "," + centroid.coordinates[0] + "&zoom=7&size=500x500&key=AIzaSyBVZTV9TU1NpITTB1ar5awvfr1BR1OKvlA"
 
-    var thumbnail = "https://maps.googleapis.com/maps/api/staticmap?center=" + centroid.coordinates[1] + "," + centroid.coordinates[0] + "&zoom=7&size=500x500&key=AIzaSyBVZTV9TU1NpITTB1ar5awvfr1BR1OKvlA"
-
-    queryString = util.format(`UPDATE events SET site_count=%s, thumbnail='%s' WHERE id=%s`, featCol.features.length, thumbnail, eventId)
-    yield db.query(queryString)
-
+    // queryString = util.format(`UPDATE events SET site_count=%s, thumbnail='%s' WHERE id=%s`, featCol.features.length, thumbnail, eventId)
+    // yield db.query(queryString)
+    transaction.done()
     return result;
 }
 
@@ -391,8 +602,14 @@ exports.getEventPolygons = function* getEventPolygons(eventId) {
 }
 
 exports.getEvents = function* getEvents() {
-    let queryString = `SELECT id, site_count, name, description, thumbnail, creation_date, ST_AsGeoJSON(centroid) AS centroid FROM events`;
-    let result = yield db.query(queryString);
+    // let queryString = `SELECT id, site_count, name, description, thumbnail, creation_date, ST_AsGeoJSON(centroid) AS centroid FROM events`;
+    let result = yield db.query({
+        "name": "get_event",
+        "text": `
+            SELECT id, site_count, name, thumbnail, ST_XMin(bbox) AS west, ST_YMin(bbox) AS south, ST_XMax(bbox) AS east, ST_YMax(bbox) AS north
+            FROM event
+        `
+    })
     return result.rows;
 }
 
@@ -407,12 +624,16 @@ exports.getEventsPage = function* getEventsPage(page) {
 }
 
 exports.createUser = function* createUser(username, password, email, firstName, lastName, salt) {
-    let queryString = util.format(`
-          INSERT INTO users (username, email, first_name, last_name, hash, salt)
-          values ('%s', '%s', '%s', '%s', crypt('%s', '%s'), '%s')
-          RETURNING id`, username, email, firstName, lastName, password, salt, salt)
     try {
-        var result = yield db.query(queryString);
+        var result = yield db.query({
+            "name": "create_user",
+            "text": `
+            INSERT INTO app_user (username, email, first_name, last_name, hash, salt)
+            VALUES ($1, $2, $3, $4, crypt($5, $6), $7)
+            RETURNING id
+            `,
+            "values": [username, email, firstName, lastName, password, salt, salt]
+        })
         var userId = result.rows[0].id
         var message = null
         var status = 200
@@ -420,6 +641,7 @@ exports.createUser = function* createUser(username, password, email, firstName, 
         var token = createToken(username)
         var expiresIn = 8 * 60 * 60
     } catch (e) {
+        console.error(e)
         userId = null
         message = e
         status = 401
@@ -437,41 +659,41 @@ exports.createUser = function* createUser(username, password, email, firstName, 
     };
 }
 
-exports.setPolygonColor = function* setPolygonColor(username, status, eventId, polygonId) {
-    let tableName = util.format("%s_%s_states", username, eventId)
-    let queryString = util.format(`CREATE TABLE IF NOT EXISTS %s () INHERITS (_%s_states)`, tableName, eventId)
+// exports.setPolygonColor = function* setPolygonColor(username, status, eventId, polygonId) {
+//     let tableName = util.format("%s_%s_states", username, eventId)
+//     let queryString = util.format(`CREATE TABLE IF NOT EXISTS %s () INHERITS (_%s_states)`, tableName, eventId)
 
-    try {
-        yield db.query(queryString)
-        queryString = util.format(`
-              SELECT weight
-              FROM users
-              WHERE username='%s' OR email='%s'`, username, username)
-        let weight = yield db.query(queryString)
-        console.log("weight", weight.rows[0].weight)
-        queryString = util.format(`
-                INSERT INTO %s (date, status, id, weight)
-                VALUES (NOW(), '%s', %s, %s)
-                ON CONFLICT ON CONSTRAINT %s_%s_states_id_key
-                DO UPDATE SET status=excluded.status, date=NOW()
-                RETURNING *`, tableName, status, polygonId, weight.rows[0].weight, username, eventId)
+//     try {
+//         yield db.query(queryString)
+//         queryString = util.format(`
+//               SELECT weight
+//               FROM users
+//               WHERE username='%s' OR email='%s'`, username, username)
+//         let weight = yield db.query(queryString)
+//         console.log("weight", weight.rows[0].weight)
+//         queryString = util.format(`
+//                 INSERT INTO %s (date, status, id, weight)
+//                 VALUES (NOW(), '%s', %s, %s)
+//                 ON CONFLICT ON CONSTRAINT %s_%s_states_id_key
+//                 DO UPDATE SET status=excluded.status, date=NOW()
+//                 RETURNING *`, tableName, status, polygonId, weight.rows[0].weight, username, eventId)
 
-        var result = yield db.query(queryString)
-        var status = 200
-        var message = null
-        var success = true
-    } catch (e) {
-        status = 401
-        message = e
-        success = false
-    }
+//         var result = yield db.query(queryString)
+//         var status = 200
+//         var message = null
+//         var success = true
+//     } catch (e) {
+//         status = 401
+//         message = e
+//         success = false
+//     }
 
-    return {
-        "status": status,
-        "message": message,
-        "success": success
-    }
-}
+//     return {
+//         "status": status,
+//         "message": message,
+//         "success": success
+//     }
+// }
 
 exports.generateSalt = function* generateSalt() {
     let queryString = "SELECT gen_salt('md5') AS salt";
@@ -480,57 +702,58 @@ exports.generateSalt = function* generateSalt() {
 }
 
 exports.init = function* init() { //initialize tables if not exist
-    yield db.query(`
-        CREATE TABLE IF NOT EXISTS states (
-            status              text                not null unique
-        )
-    `)
+    yield db.query(fs.readFileSync('initialize.pgsql').toString())
+    // yield db.query(`
+    //     CREATE TABLE IF NOT EXISTS states (
+    //         status              text                not null unique
+    //     )
+    // `)
 
-    yield db.query(`INSERT INTO states VALUES ('DAMAGE'),('NO_DAMAGE'),('UNSURE'),('NOT_EVALUATED') ON CONFLICT DO NOTHING`)
+    // yield db.query(`INSERT INTO states VALUES ('DAMAGE'),('NO_DAMAGE'),('UNSURE'),('NOT_EVALUATED') ON CONFLICT DO NOTHING`)
 
-    yield db.query(`
-        CREATE TABLE IF NOT EXISTS users (
-            id            serial primary key            not null unique,
-            username      text                          not null unique,
-            email         text                          not null unique,
-            first_name    text                          not null,
-            last_name     text                          not null,
-            hash          text                          not null,
-            salt          text                          not null,
-            weight        numeric(10, 5)                not null DEFAULT 1.00
-        )
-    `)
+    // yield db.query(`
+    //     CREATE TABLE IF NOT EXISTS users (
+    //         id            serial primary key            not null unique,
+    //         username      text                          not null unique,
+    //         email         text                          not null unique,
+    //         first_name    text                          not null,
+    //         last_name     text                          not null,
+    //         hash          text                          not null,
+    //         salt          text                          not null,
+    //         weight        numeric(10, 5)                not null DEFAULT 1.00
+    //     )
+    // `)
 
-    yield db.query(`
-        CREATE TABLE IF NOT EXISTS admins (
-            username      text                          references users(username)
-        )
-    `)
+    // yield db.query(`
+    //     CREATE TABLE IF NOT EXISTS admins (
+    //         username      text                          references users(username)
+    //     )
+    // `)
 
-    yield db.query(`
-        CREATE TABLE IF NOT EXISTS events (
-            id            serial                        not null unique,
-            name          text                          not null,
-            description   text,
-            thumbnail     text,
-            creation_date date,
-            centroid      geometry(Point, 4326),
-            site_count    integer,
-            bbox          geometry(Geometry, 4326)      
-        )
-    `)
+    // yield db.query(`
+    //     CREATE TABLE IF NOT EXISTS events (
+    //         id            serial                        not null unique,
+    //         name          text                          not null,
+    //         description   text,
+    //         thumbnail     text,
+    //         creation_date date,
+    //         centroid      geometry(Point, 4326),
+    //         site_count    integer,
+    //         bbox          geometry(Geometry, 4326)      
+    //     )
+    // `)
 
-    yield db.query(`
-        CREATE TABLE IF NOT EXISTS sites (
-            id            integer                       
-            pos           integer                       
-            geom_poly     geometry(Polygon, 4326),
-            geom_multi    geometry(MultiPolygon, 4326),
-            properties    JSONB,
-            event_id      integer                       references events(id),
-            bbox          geometry(Polygon, 4326)
-        )
-    `)
+    // yield db.query(`
+    //     CREATE TABLE IF NOT EXISTS sites (
+    //         id            integer                       
+    //         pos           integer                       
+    //         geom_poly     geometry(Polygon, 4326),
+    //         geom_multi    geometry(MultiPolygon, 4326),
+    //         properties    JSONB,
+    //         event_id      integer                       references events(id),
+    //         bbox          geometry(Polygon, 4326)
+    //     )
+    // `)
 
     console.log("Initialization done.")
     return

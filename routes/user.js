@@ -26,6 +26,12 @@ var koaBody = new KoaBody({
 })
 
 publicRouter
+  .post("/do/:func", function* () {
+    var ctx = this
+    var result = yield services[ctx.params.func].apply(null, ctx.request.body.args)
+    console.log(ctx.request.body.args)
+    ctx.body = result
+  })
   .post("/prep", function* () {
     /**
      * Test for prepared statement. Can delete
@@ -59,8 +65,8 @@ publicRouter
   })
   .post("/user/create", function* () {
     let ctx = this;
-    let salt = yield services.generateSalt();
     let body = ctx.request.body;
+    let salt = yield services.generateSalt();
     var result = yield services.createUser(body.username, body.password, body.email, body.first_name, body.last_name, salt);
     ctx.body = result;
   })
@@ -123,6 +129,7 @@ protectedRouter
       let result = yield services.addEvent(file.name, "No description.", "")
       if (result.success) {
         yield services.addPolygons(parsedLocalFile, result.event_id)
+        yield services.setEventMetaData(result.event_id)
         cofs.unlink(file.path)
       }
     } catch (e) {
@@ -167,10 +174,14 @@ protectedRouter
    * Input: comma delimited list of polygon ids, event id
    * Returns  polygons
    */
-  .post("/user/:username/event/:id/polygon/:ids", function* () {
+  .post("/user/:username/event/:event_id/polygon/:polygon_ids", function* () {
     var ctx = this
-    params = ctx.params
-    var result = `username: ${ params.username }, event: ${ params.id }, id list: ${ ids.join(", ") }`
+    var params = ctx.params
+    var username = params.username
+    var eventId = params.event_id
+    var ids = params.polygon_ids.split(",")
+    var result = `username: ${ username }, event: ${ eventId }, id list: ${ ids.join(",") }`
+    result = yield services.getPolygonsById(username, eventId, ids)
     ctx.body = result
   })
   .get("/user/:username/event/:id", function* () {

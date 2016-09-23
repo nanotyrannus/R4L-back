@@ -12,10 +12,10 @@ var QueryError = function (errorCode, detail, query) {
 }
 
 module.exports = {
-  "query" : function* (queryString) {
+  "query" : function* (queryString, verbose=true) {
     var timestamp, connectionResults, client, done, result
 
-    if (config.debug) {
+    if (verbose) {
       timestamp = Date.now()
       console.log("db.query called: ", queryString)
     }
@@ -33,7 +33,7 @@ module.exports = {
 
     done();
 
-    if (config.debug) {
+    if (verbose) {
       console.log(`elapsed: ${ Date.now() - timestamp }`)
     }
 
@@ -48,7 +48,7 @@ module.exports = {
       "begin" : function* () {
         yield client.queryPromise('BEGIN')
       },
-      "query" : function* (queryString) {
+      "query" : function* (queryString, verbose=true) {
         var result = null
         try {
           result = yield client.queryPromise(queryString)
@@ -57,7 +57,9 @@ module.exports = {
           console.log(`Rolled back:\n${ queryString }`)
           throw e
         }
-        console.log(`TRANSACTION: `, result)
+        if (verbose) {
+          console.log(`TRANSACTION: `, result)
+        }
         return result
       },
       "done" : function* () {
