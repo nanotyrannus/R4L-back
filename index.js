@@ -92,9 +92,10 @@ co.wrap(function* () {
       console.log("User authenticated: ", ctx.get("x-username"))
       if (yield services.isAdmin(ctx.get("x-username"))) {
         yield next
-      } else {
-        throw new UnauthorizedError("No admin privileges.")
-      }
+      } 
+      // else {
+      //   throw new UnauthorizedError("No admin privileges.")
+      // }
     })
     app.use(adminRoutes.routes)
 
