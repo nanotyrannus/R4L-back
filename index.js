@@ -58,7 +58,7 @@ co.wrap(function* () {
           ctx.status = 403
         } else {
           ctx.body.message = e.message
-          ctx.body.status = ctx.status = 500
+          ctx.body.status = ctx.status = e.status
         }
         console.error(e)
         ctx.body.request = ctx.request.body //echo back request

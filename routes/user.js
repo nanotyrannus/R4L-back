@@ -89,7 +89,6 @@ protectedRouter
   .get('/event/:id/list', function*() { // Returns list of polygons
     var ctx = this
     var result = yield services.getPolygonList(ctx.params.id)
-    console.log(`fucking event/:id/list`,result)
     ctx.body = result
   })
   .get('/event/:id', function* () {
@@ -106,7 +105,7 @@ protectedRouter
     let ctx = this
     let body = ctx.request.body
     let params = ctx.params
-    let result = yield services.setPolygonColor(body.username, body.status, params.eventId, params.polygonId);
+    let result = yield services.setPolygonVote(body.username, params.eventId, params.polygonId, body.vote);
     ctx.body = result
     // let queryString = 'INSERT INTO POLYGON (id,coordinates) VALUES (' + body.id + ',\'' + body.coordinates + '\')';
     // let result = yield db.query(queryString)

@@ -12,12 +12,15 @@ var privateKey = fs.readFileSync(home + "/.ssh/radar.rsa")
 const key = fs.readFileSync(home + "/.ssh/radar.key")
 
 function createToken(username) {
-    return jwt.sign(
-        {
-            "username": username
-        },
-        key
-    )
+    return jwt.sign({ "username": username }, key)
+}
+
+var ServicesError = function (statusCode, detail, query) {
+    this.name = "ServicesError"
+    this.statusCode = statusCode
+    this.message = detail || "Error during server processing"
+    this.query = query
+    this.stack = (new Error()).stack
 }
 
 exports.isAdmin = function* isAdmin(userIdentifier) {
@@ -27,14 +30,13 @@ exports.isAdmin = function* isAdmin(userIdentifier) {
     // INNER JOIN users AS b
     // ON a.username=b.username
     // WHERE b.username='${ userIdentifier}' OR b.email='${userIdentifier}'`)
-
     var queryResult = yield db.query({
-        'text' : `
+        'text': `
             SELECT is_admin
             FROM app_user
             WHERE username=$1 OR email=$1
         `,
-        values : [userIdentifier]
+        values: [userIdentifier]
     })
     return queryResult.rows[0].is_admin
 }
@@ -92,9 +94,12 @@ exports.getPolygonList = function* (eventId) {
     var result = yield db.query({
         'name': "get_polygon_list",
         'text': `
-            SELECT polygon_id AS id, ST_x(centroid) AS lng, ST_y(centroid) AS lat
+            SELECT polygon_id AS id, ST_x(centroid) AS lng, ST_y(centroid) AS lat, COALESCE(vote, 'not_evaluated'::damage_level) AS vote
             FROM site
-            WHERE event_id=$1
+            LEFT OUTER JOIN site_vote
+            ON site.id=site_vote.site_id
+            WHERE site.event_id=$1
+            ORDER BY polygon_id
         `,
         'values': [eventId]
     })
@@ -252,7 +257,7 @@ exports.getPolygonsById = function* getPolygonsById(userHandle, eventId, polygon
     polygonIds = polygonIds.map(function mapper(element) {
         let number = Number(element)
         if (isNaN(number)) {
-            throw new Error(`Invalid polygon ID: ${ number }`)
+            throw new Error(`Invalid polygon ID: ${number}`)
         } else {
             return number
         }
@@ -269,8 +274,8 @@ exports.getPolygonsById = function* getPolygonsById(userHandle, eventId, polygon
         'values': [eventId]
     })
     return {
-        'polygons' : result.rows,
-        'status' : 200
+        'polygons': result.rows,
+        'status': 200
     }
 }
 
@@ -278,23 +283,37 @@ exports.setPolygonVote = function* setPolygonVote(userHandle, eventId, polygonId
     var status = 200
     var userId = yield exports.getUserId(userHandle)
     var weight = yield exports.getUserWeight(userHandle)
-    var siteId = (yield db.query({
-        'text': `
+    try {
+        var siteId = (yield db.query({
+            'text': `
             SELECT id
             FROM site
             WHERE event_id=$1 AND polygon_id=$2
-        `, 'values': [eventId, polygonId]
-    })).rows[0].id
-    var result = yield db.query({
-        'text': `
+        `,
+            'values': [eventId, polygonId]
+        })).rows[0].id
+        var result = yield db.query({
+            'text': `
             INSERT INTO site_vote (user_id, site_id, vote, weight)
             VALUES ($1, $2, $3, $4)
             ON CONFLICT (user_id, site_id)
             DO UPDATE SET vote = $3, vote_time = NOW()
         `,
-        'values': [userId, siteId, vote, weight]
-    })
-    return result
+            'values': [userId, siteId, vote, weight]
+        })
+    } catch (e) {
+        console.error("Error submitting user vote")
+        return {
+            'polygon_id': polygonId,
+            'event_id': eventId,
+            'success': false
+        }
+    }
+    return {
+        'polygon_id': polygonId,
+        'event_id': eventId,
+        'success': true
+    }
 }
 
 exports.getUserWeight = function* getUserWeigh(userHandle) {
@@ -426,17 +445,17 @@ exports.deleteEvent = function* deleteEvent(eventId) {
         var transaction = yield db.Transaction()
         transaction.start()
         yield transaction.query({
-            'text' : `
+            'text': `
                 DELETE FROM event 
                 WHERE id=$1
             `,
-            'values' : [eventId]
+            'values': [eventId]
         })
         yield transaction.query({
-            'text' : `
+            'text': `
                 DELETE FROM site 
                 WHERE event_id=$1 
-            `, 'values' : [eventId]
+            `, 'values': [eventId]
         })
         yield transaction.done()
     } catch (e) {
@@ -444,7 +463,7 @@ exports.deleteEvent = function* deleteEvent(eventId) {
         return {
             "status": 401,
             "success": false,
-            "message": e
+            "message": e.message
         }
     }
     return {
@@ -455,7 +474,7 @@ exports.deleteEvent = function* deleteEvent(eventId) {
 
 exports.setEventMetaData = function* setEventMetaData(eventId) {
     yield db.query({
-        "name": "evaluate_polygon_properties",
+        //"name": "evaluate_polygon_properties",
         "text": `
             UPDATE site
             SET bbox=ST_Envelope(polygon), centroid=ST_Centroid(polygon)
@@ -464,7 +483,7 @@ exports.setEventMetaData = function* setEventMetaData(eventId) {
         "values": [eventId]
     })
     yield db.query({
-        "name": "evaluate_event_bounding_box",
+        //"name": "evaluate_event_bounding_box",
         "text": `
             UPDATE event
             SET bbox=(
@@ -478,7 +497,19 @@ exports.setEventMetaData = function* setEventMetaData(eventId) {
         "values": [eventId, eventId]
     })
     yield db.query({
-        'name': "evaluate_event_centroid",
+        'text': `
+            UPDATE event
+            SET site_count= (
+                SELECT COUNT(*)
+                FROM site
+                WHERE event_id=$1
+            )
+            WHERE id=$1
+        `,
+        'values': [eventId]
+    })
+    yield db.query({
+        //'name': "evaluate_event_centroid",
         'text': `
             UPDATE event
             SET centroid=ST_Centroid(bbox)
@@ -487,7 +518,7 @@ exports.setEventMetaData = function* setEventMetaData(eventId) {
         'values': [eventId]
     })
     yield db.query({
-        'name': "generate_event_thumbnail",
+        //'name': "generate_event_thumbnail",
         'text': `
             UPDATE event
             SET thumbnail='https://maps.googleapis.com/maps/api/staticmap?center=' || ST_Y(centroid) || ',' || ST_X(centroid) || '&zoom=7&size=500x500&key=AIzaSyBVZTV9TU1NpITTB1ar5awvfr1BR1OKvlA'

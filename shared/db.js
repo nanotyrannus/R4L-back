@@ -6,6 +6,7 @@ let config = require("../config.json");
 
 var QueryError = function (errorCode, detail, query) {
   this.name = "QueryError"
+  this.errorCode = errorCode
   this.message = detail || "Error processing database query"
   this.query = query
   this.stack = (new Error()).stack
