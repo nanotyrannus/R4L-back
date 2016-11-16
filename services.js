@@ -443,19 +443,33 @@ exports.deleteEvent = function* deleteEvent(eventId) {
     // var queryString = `DELETE FROM events WHERE id=${eventId}`
     try {
         var transaction = yield db.Transaction()
-        transaction.start()
+        transaction.begin()
         yield transaction.query({
-            'text': `
-                DELETE FROM event 
-                WHERE id=$1
+            'text' : `
+                DELETE  
+                FROM site_vote
+                WHERE site_id IN (
+                    SELECT site_id 
+                    FROM site_vote 
+                    LEFT JOIN site 
+                    ON site_vote.site_id=site.id 
+                    WHERE site.event_id=$1
+                )
             `,
-            'values': [eventId]
+            'values' : [eventId]
         })
         yield transaction.query({
             'text': `
                 DELETE FROM site 
                 WHERE event_id=$1 
             `, 'values': [eventId]
+        })
+        yield transaction.query({
+            'text': `
+                DELETE FROM event 
+                WHERE id=$1
+            `,
+            'values': [eventId]
         })
         yield transaction.done()
     } catch (e) {
@@ -469,6 +483,21 @@ exports.deleteEvent = function* deleteEvent(eventId) {
     return {
         "status": 200,
         "success": true
+    }
+}
+
+exports.setEventDescription = function* setEventDescription(eventId, description) {
+    yield db.query({
+        "text" : `
+            UPDATE event
+            SET description=$1
+            WHERE id=$2
+        `,
+        "values" : [description, eventId]
+    })
+    return {
+        "status" : 200,
+        "success" : true
     }
 }
 

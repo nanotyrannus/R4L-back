@@ -151,18 +151,20 @@ protectedRouter
      * json strings
      */
   })
-  .delete("/event/:id", function* () {
+  .post("/event/:id/delete", function* () {
     var ctx = this
     var body = ctx.request.body
     var result = yield services.deleteEvent(ctx.params.id)
     ctx.body = result
   })
-  .post("/event/:id", function* () {
+  .post("/event/:id/description", function* () {
     /**
      * Change event metadata
      */
     let ctx = this
     console.log(ctx.request)
+    var result = yield services.setEventDescription(ctx.params.id, ctx.request.body.description)
+    ctx.body = result
   })
   .get("/event", function* () {
     var ctx = this
