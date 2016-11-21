@@ -99,7 +99,7 @@ protectedRouter
   .get('/event/:id/data', function* () {
     var ctx = this
     var result = yield services.getEventTotals(ctx.params.id)
-    ctx.body = result
+    ctx.body = result.rows
   })
   .post('/event/:eventId/polygon/:polygonId', function* () { //set polygon color
     let ctx = this
@@ -170,6 +170,19 @@ protectedRouter
     var ctx = this
     var result = yield services.getEvents()
     ctx.body = result
+  })
+  .post("/event/:id/meta", function* () {
+    var ctx = this
+    var body = ctx.request.body
+    var id = ctx.params.id
+    if (body.name) yield services.setEventName(id, body.name)
+    if (body.description) yield services.setEventDescription(id, body.description)
+    if (body.start_date) yield services.setEventStartTime(id, body.start_date)
+    if (body.end_date) yield services.setEventEndTime(id, body.end_date)
+    ctx.body = {
+      "status" : 200,
+      "success" : true
+    }
   })
   /**
    * Input: comma delimited list of polygon ids, event id

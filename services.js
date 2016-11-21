@@ -42,49 +42,62 @@ exports.isAdmin = function* isAdmin(userIdentifier) {
 }
 
 exports.getEventTotals = function* getEventTotals(eventId) {
-    var queryString = `
-    SELECT id, status, count(status) AS integer_count, SUM(weight) AS count 
-    FROM _${ eventId}_states 
-    GROUP BY id, status`
+    // var queryString = `
+    // SELECT id, status, count(status) AS integer_count, SUM(weight) AS count 
+    // FROM _${ eventId}_states 
+    // GROUP BY id, status`
 
-    try {
-        var status = 200
-        var message = null
-        var result = yield db.query(queryString)
-        var processed = result.rows.reduce(function reducer(previous, current) {
-            if (previous.result[current.id]) {
-                let accumulator = previous.result[current.id]
-                accumulator[current.status] = Number(current.count)
-                if ((Number(accumulator[accumulator["highest"]]) || 0) < Number(current.count)) {
-                    // Number returns NaN on undefined, so the above OR casts NaN to 0
-                    accumulator["highest"] = current.status
-                } else if (Number(accumulator[accumulator["highest"]]) === Number(current.count)) {
-                    accumulator["highest"] = "TIE"
-                }
-            } else {
-                let o = {
-                    "id": current.id,
-                    "DAMAGE": 0,
-                    "NO_DAMAGE": 0,
-                    "UNSURE": 0,
-                    "NOT_EVALUATED": 0
-                }
-                o[current.status] = current.count
-                o["highest"] = current.status
-                previous.result[current.id] = o
-            }
-            return previous
-        }, { "result": {} })
-    } catch (e) {
-        status = 401
-        message = e
-    }
+    // try {
+    //     var status = 200
+    //     var message = null
+    //     var result = yield db.query(queryString)
+    //     var processed = result.rows.reduce(function reducer(previous, current) {
+    //         if (previous.result[current.id]) {
+    //             let accumulator = previous.result[current.id]
+    //             accumulator[current.status] = Number(current.count)
+    //             if ((Number(accumulator[accumulator["highest"]]) || 0) < Number(current.count)) {
+    //                 // Number returns NaN on undefined, so the above OR casts NaN to 0
+    //                 accumulator["highest"] = current.status
+    //             } else if (Number(accumulator[accumulator["highest"]]) === Number(current.count)) {
+    //                 accumulator["highest"] = "TIE"
+    //             }
+    //         } else {
+    //             let o = {
+    //                 "id": current.id,
+    //                 "DAMAGE": 0,
+    //                 "NO_DAMAGE": 0,
+    //                 "UNSURE": 0,
+    //                 "NOT_EVALUATED": 0
+    //             }
+    //             o[current.status] = current.count
+    //             o["highest"] = current.status
+    //             previous.result[current.id] = o
+    //         }
+    //         return previous
+    //     }, { "result": {} })
+    // } catch (e) {
+    //     status = 401
+    //     message = e
+    // }
 
-    return {
-        "status": status,
-        "message": message,
-        "result": processed.result
-    }
+    // return {
+    //     "status": status,
+    //     "message": message,
+    //     "result": processed.result
+    // }
+    var result = yield db.query({
+        'text' : `
+            SELECT polygon_id, vote, count(vote) AS count, sum(weight) AS weighted_count
+            FROM site_vote
+            LEFT JOIN site
+            ON site.id=site_vote.site_id
+            WHERE site.event_id=$1
+            GROUP BY polygon_id, vote
+            ORDER BY polygon_id
+        `,
+        'values' : [eventId]
+    })
+    return result
 }
 
 exports.getPolygonList = function* (eventId) {
@@ -92,7 +105,6 @@ exports.getPolygonList = function* (eventId) {
     //     SELECT id, pos, properties->'centroid' AS centroid FROM _${ eventId}_sites
     // `)
     var result = yield db.query({
-        'name': "get_polygon_list",
         'text': `
             SELECT polygon_id AS id, ST_x(centroid) AS lng, ST_y(centroid) AS lat, COALESCE(vote, 'not_evaluated'::damage_level) AS vote
             FROM site
@@ -501,6 +513,49 @@ exports.setEventDescription = function* setEventDescription(eventId, description
     }
 }
 
+exports.setEventName = function* setEventName(eventId, name) {
+    yield db.query({
+        "text" : `
+            UPDATE event
+            SET name=$1
+            WHERE id=$2
+        `,
+        "values" : [name, eventId]
+    })
+    return {
+        "status" : 200,
+        "success" : true
+    }
+}
+exports.setEventStartTime = function* setEventStartTime(eventId, time) {
+    yield db.query({
+        "text" : `
+            UPDATE event
+            SET start_date=$1
+            WHERE id=$2
+        `,
+        "values" : [time, eventId]
+    })
+    return {
+        "status" : 200,
+        "success" : true
+    }
+}
+exports.setEventEndTime = function* setEventEndTime(eventId, time) {
+    yield db.query({
+        "text" : `
+            UPDATE event
+            SET end_date=$1
+            WHERE id=$2
+        `,
+        "values" : [time, eventId]
+    })
+    return {
+        "status" : 200,
+        "success" : true
+    }
+}
+
 exports.setEventMetaData = function* setEventMetaData(eventId) {
     yield db.query({
         //"name": "evaluate_polygon_properties",
@@ -666,7 +721,7 @@ exports.getEvents = function* getEvents() {
     let result = yield db.query({
         "name": "get_event",
         "text": `
-            SELECT id, site_count, name, thumbnail, ST_XMin(bbox) AS west, ST_YMin(bbox) AS south, ST_XMax(bbox) AS east, ST_YMax(bbox) AS north
+            SELECT id, site_count, name, thumbnail, ST_XMin(bbox) AS west, ST_YMin(bbox) AS south, ST_XMax(bbox) AS east, ST_YMax(bbox) AS north, start_date, end_date, description
             FROM event
         `
     })
