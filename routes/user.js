@@ -7,6 +7,7 @@ const fs = require("fs")
 const cofs = require("co-fs")
 const jwt = require("koa-jwt")
 const KoaBody = require("koa-body")
+const send = require("koa-send")
 const os = require("os")
 
 var home = process.env.HOME
